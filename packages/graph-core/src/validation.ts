@@ -354,6 +354,16 @@ function validateGraphSemantics(
     })
   }
 
+  for (const nodeId of diagnostics.disconnectedNodeIds) {
+    issues.push({
+      code: 'disconnected_node',
+      message: `Node "${nodeId}" is disconnected from all edges.`,
+      severity: 'warning',
+      graphId: graph.id,
+      nodeId,
+    })
+  }
+
   return issues
 }
 

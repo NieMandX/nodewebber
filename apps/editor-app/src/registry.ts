@@ -3,8 +3,12 @@ import { basicNodeDefinitions } from '@procedural-web-composer/node-definitions-
 import { layoutNodeDefinitions } from '@procedural-web-composer/node-definitions-layout'
 import { styleNodeDefinitions } from '@procedural-web-composer/node-definitions-style'
 
-export const registry = freezeNodeRegistry(createNodeRegistry([
+const registryInstance = createNodeRegistry([
   ...layoutNodeDefinitions,
   ...basicNodeDefinitions,
   ...styleNodeDefinitions,
-]))
+])
+
+freezeNodeRegistry(registryInstance)
+
+export const registry = registryInstance

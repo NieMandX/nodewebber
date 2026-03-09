@@ -19,9 +19,10 @@ apps/
   editor-app/         Graph editor with palette, canvas, inspector, JSON I/O, and live preview
   preview-app/        Standalone runtime preview for project JSON
 packages/
+  ui-tree/            UiNode model, strict UiNodeKind union, and tree helpers
   shared-types/       Cross-package graph, runtime, and editor contracts
   shared-utils/       Small shared helpers and theme normalization
-  graph-core/         Schemas, serialization, graph validation, cycle detection, topo sort
+  graph-core/         Schemas, serialization, graph validation, diagnostics, cycle detection, topo sort
   graph-engine/       Dependency graph construction and node evaluation
   node-registry/      Node definition registry API
   node-definitions-layout/
@@ -51,7 +52,13 @@ Project JSON
 
 - Owns document schemas and JSON parse/serialize helpers.
 - Validates graph shape, nodes, edges, required ports, and cycles.
+- Exposes structured graph diagnostics for orphan UI nodes, unused themes, disconnected nodes, and page-node issues.
 - Exposes `detectCycles()` and `topoSort()`.
+
+### `ui-tree`
+
+- Owns the intermediate UI tree model.
+- Defines `UiNode`, strict `UiNodeKind`, and helpers like `isUiNode()`, `walkUiTree()`, and `mapUiTree()`.
 
 ### `graph-engine`
 
@@ -64,6 +71,7 @@ Project JSON
 - Loads a `ProjectDocument`.
 - Runs validation and node evaluation.
 - Builds the intermediate `UiNode` tree from evaluated `ui` outputs and `structure` edges.
+- Uses optional `edge.order` on structure edges for stable child ordering, then falls back to node position for backward compatibility.
 
 ### `runtime-react`
 
@@ -80,13 +88,17 @@ Project JSON
 - Adapts graph documents to React Flow nodes and edges.
 - Handles connections, selection, deletion, palette actions, and generic param editing.
 
+### `node-registry`
+
+- Registers node definitions during bootstrap and can be frozen afterward to prevent accidental runtime mutation.
+
 ## MVP node set
 
 - Layout: `layout.page`, `layout.section`, `layout.stack`
 - Content: `content.heading`, `content.text`, `content.button`, `content.image`
 - Style: `style.theme`
 
-`style.theme` produces a theme object. `layout.page` consumes that theme through a style edge. Layout and content nodes produce `ui` outputs. Structure edges connect `ui -> parent` to define hierarchy.
+`style.theme` produces a theme object. `layout.page` consumes that theme through a style edge. Layout and content nodes produce `ui` outputs. Structure edges connect `ui -> parent` to define hierarchy and may optionally include `edge.order` for explicit child ordering.
 
 ## Commands
 
@@ -102,5 +114,7 @@ pnpm typecheck
 
 - `graph-core` has no React dependency.
 - Runtime packages only produce and render the intermediate UI tree.
+- `UiNode` and `UiNodeKind` now live in `ui-tree`, not `shared-types`.
+- Disconnected nodes are surfaced as graph validation warnings via `validateGraph()`, and the structured diagnostics API remains available through `getGraphDiagnostics()`.
 - The implementation intentionally excludes backend, auth, collaboration, AI, subgraphs, export, animation, events, and complex CSS.
 - The editor inspector uses a generic param editor; nested objects such as theme tokens are edited as JSON.
