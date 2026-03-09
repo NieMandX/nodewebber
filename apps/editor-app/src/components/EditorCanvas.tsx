@@ -19,6 +19,7 @@ import {
   NodeToolbar,
   Position,
   ReactFlow,
+  applyNodeChanges,
   useReactFlow,
   type Connection,
   type Edge,
@@ -68,8 +69,10 @@ export function EditorCanvas(props: EditorCanvasProps): JSX.Element {
   const project = useStore(props.store, (state) => state.project)
   const selectedGraphId = useStore(props.store, (state) => state.selectedGraphId)
   const graph = getGraphById(project, selectedGraphId)
+  const graphNodes = graph?.nodes ?? []
   const [clipboardNodeId, setClipboardNodeId] = useState<string>()
   const [reactFlowInstance, setReactFlowInstance] = useState<ReactFlowInstance<EditorCanvasNode, Edge> | null>(null)
+  const [flowNodes, setFlowNodes] = useState<EditorCanvasNode[]>([])
   const wrapperRef = useRef<HTMLDivElement>(null)
 
   const invalidMessagesByNodeId = useMemo(() => {
@@ -86,17 +89,13 @@ export function EditorCanvas(props: EditorCanvasProps): JSX.Element {
     return nextMap
   }, [props.issues])
 
-  if (!graph) {
-    return <div className="empty-panel">No active graph</div>
-  }
-
   const clipboardExistsInGraph = useMemo(
-    () => clipboardNodeId !== undefined && graph.nodes.some((node) => node.id === clipboardNodeId),
-    [clipboardNodeId, graph.nodes],
+    () => clipboardNodeId !== undefined && graphNodes.some((node) => node.id === clipboardNodeId),
+    [clipboardNodeId, graphNodes],
   )
-  const nodes = useMemo<EditorCanvasNode[]>(
+  const baseNodes = useMemo<EditorCanvasNode[]>(
     () =>
-      graph.nodes.map((node) => {
+      graphNodes.map((node) => {
         const definition = props.registry.getNodeDefinition(node.type)
         const referencedSubgraph =
           node.type === 'subgraph.instance' &&
@@ -149,20 +148,28 @@ export function EditorCanvas(props: EditorCanvasProps): JSX.Element {
     [
       clipboardExistsInGraph,
       clipboardNodeId,
-      graph.nodes,
+      graphNodes,
       invalidMessagesByNodeId,
       project,
       props.registry,
       props.store,
     ],
   )
-  const edges = useMemo(() => toReactFlowEdges(graph), [graph])
+  const edges = useMemo(() => (graph ? toReactFlowEdges(graph) : []), [graph])
   const nodeTypes = useMemo<NodeTypes>(
     () => ({
       'editor-node': CanvasNode,
     }),
     [],
   )
+
+  useEffect(() => {
+    setFlowNodes((currentNodes) => reconcileFlowNodes(currentNodes, baseNodes))
+  }, [baseNodes])
+
+  if (!graph) {
+    return <div className="empty-panel">No active graph</div>
+  }
 
   return (
     <div
@@ -204,13 +211,13 @@ export function EditorCanvas(props: EditorCanvasProps): JSX.Element {
       <ReactFlow<EditorCanvasNode, Edge>
         fitView
         minZoom={0.2}
-        nodes={nodes}
+        nodes={flowNodes}
         edges={edges}
         nodeTypes={nodeTypes}
         proOptions={{ hideAttribution: true }}
         onInit={setReactFlowInstance}
         onConnect={(connection) => handleConnect(connection, props.store)}
-        onNodesChange={(changes) => handleNodesChange(changes, props.store)}
+        onNodesChange={(changes) => handleNodesChange(changes, setFlowNodes, props.store)}
         onSelectionChange={(selection) => handleSelectionChange(selection, props.store)}
         onPaneClick={() => props.store.getState().selectNode(undefined)}
         onNodesDelete={(deletedNodes) => {
@@ -445,9 +452,15 @@ function handleConnect(connection: Connection, store: EditorStore): void {
   })
 }
 
-function handleNodesChange(changes: NodeChange[], store: EditorStore): void {
+function handleNodesChange(
+  changes: NodeChange<EditorCanvasNode>[],
+  setFlowNodes: React.Dispatch<React.SetStateAction<EditorCanvasNode[]>>,
+  store: EditorStore,
+): void {
+  setFlowNodes((currentNodes) => applyNodeChanges<EditorCanvasNode>(changes, currentNodes))
+
   for (const change of changes) {
-    if (change.type === 'position' && change.position) {
+    if (change.type === 'position' && change.position && change.dragging !== true) {
       store.getState().updateNodePosition(change.id, change.position)
     }
   }
@@ -576,6 +589,28 @@ function getPublicParamInputPorts(schema: PortableParamSchema): PortDefinition[]
 
 function areNodeIdListsEqual(left: string[], right: string[]): boolean {
   return left.length === right.length && left.every((value, index) => value === right[index])
+}
+
+function reconcileFlowNodes(
+  currentNodes: EditorCanvasNode[],
+  nextNodes: EditorCanvasNode[],
+): EditorCanvasNode[] {
+  const currentNodesById = new Map(currentNodes.map((node) => [node.id, node]))
+
+  return nextNodes.map((node) => {
+    const currentNode = currentNodesById.get(node.id)
+
+    if (!currentNode) {
+      return node
+    }
+
+    return {
+      ...currentNode,
+      ...node,
+      data: node.data,
+      position: node.position,
+    }
+  })
 }
 
 function getValueTypeForPortableField(field: PortableParamSchemaField): ValueType {
