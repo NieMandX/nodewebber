@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import { formatCssUnit } from '@procedural-web-composer/shared-utils'
-import type { NodeDefinition, UiNode } from '@procedural-web-composer/shared-types'
+import type { UiNode } from '@procedural-web-composer/ui-tree'
+import type { NodeDefinition } from '@procedural-web-composer/shared-types'
 
 const parentInput = {
   key: 'parent',
@@ -86,7 +87,7 @@ export const headingNodeDefinition: NodeDefinition = {
       outputs: {
         ui: {
           id: node.id,
-          kind: 'heading',
+          kind: 'Heading',
           props: {
             text,
             level: params.level,
@@ -127,7 +128,7 @@ export const textNodeDefinition: NodeDefinition = {
       outputs: {
         ui: {
           id: node.id,
-          kind: 'text',
+          kind: 'Text',
           props: {
             text,
           },
@@ -172,7 +173,7 @@ export const buttonNodeDefinition: NodeDefinition = {
       outputs: {
         ui: {
           id: node.id,
-          kind: 'button',
+          kind: 'Button',
           props: {
             label,
             href,
@@ -204,7 +205,7 @@ export const imageNodeDefinition: NodeDefinition = {
       outputs: {
         ui: {
           id: node.id,
-          kind: 'image',
+          kind: 'Image',
           props: {
             src: params.src,
             alt: params.alt,

@@ -1,10 +1,7 @@
 import { z } from 'zod'
 import { DEFAULT_THEME, formatCssUnit, normalizeThemeValue } from '@procedural-web-composer/shared-utils'
-import type {
-  NodeDefinition,
-  ThemeValue,
-  UiNode,
-} from '@procedural-web-composer/shared-types'
+import type { UiNode } from '@procedural-web-composer/ui-tree'
+import type { NodeDefinition, ThemeValue } from '@procedural-web-composer/shared-types'
 
 const layoutParentInput = {
   key: 'parent',
@@ -73,7 +70,7 @@ export const pageNodeDefinition: NodeDefinition = {
     const theme = normalizeThemeValue(ctx.getInput<ThemeValue>('theme') ?? DEFAULT_THEME)
     const ui: UiNode = {
       id: node.id,
-      kind: 'page',
+      kind: 'Page',
       props: {
         theme,
         maxWidth: params.maxWidth,
@@ -114,7 +111,7 @@ export const sectionNodeDefinition: NodeDefinition = {
       outputs: {
         ui: {
           id: node.id,
-          kind: 'section',
+          kind: 'Section',
           props: {},
           children: [],
           styles: {
@@ -145,7 +142,7 @@ export const stackNodeDefinition: NodeDefinition = {
       outputs: {
         ui: {
           id: node.id,
-          kind: 'stack',
+          kind: 'Stack',
           props: {},
           children: [],
           styles: {

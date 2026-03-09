@@ -15,7 +15,7 @@
   },
   "dependencies": {
     "@procedural-web-composer/shared-types": "workspace:*",
+    "@procedural-web-composer/ui-tree": "workspace:*",
     "zod": "^3.24.1"
   }
 }
-

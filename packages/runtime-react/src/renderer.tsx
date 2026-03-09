@@ -1,7 +1,8 @@
 import React from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { normalizeThemeValue } from '@procedural-web-composer/shared-utils'
-import type { ThemeValue, UiNode } from '@procedural-web-composer/shared-types'
+import type { UiNode } from '@procedural-web-composer/ui-tree'
+import type { ThemeValue } from '@procedural-web-composer/shared-types'
 
 export interface PreviewRendererProps {
   root: UiNode | null
@@ -26,11 +27,11 @@ export function renderUiTree(node: UiNode): ReactNode {
 }
 
 function renderUiNode(node: UiNode): ReactNode {
-  if (node.kind === 'fragment') {
+  if (node.kind === 'Fragment') {
     return <>{node.children.map((child) => renderUiNode(child))}</>
   }
 
-  if (node.kind === 'page') {
+  if (node.kind === 'Page') {
     const theme = normalizeThemeValue(node.props.theme as ThemeValue | undefined)
     const outerStyle = {
       ...toCssProperties(node.styles),
@@ -64,7 +65,7 @@ function renderUiNode(node: UiNode): ReactNode {
     )
   }
 
-  if (node.kind === 'section') {
+  if (node.kind === 'Section') {
     return (
       <section key={node.id} style={sectionStyle(node)}>
         {node.children.map((child) => renderUiNode(child))}
@@ -72,7 +73,7 @@ function renderUiNode(node: UiNode): ReactNode {
     )
   }
 
-  if (node.kind === 'stack') {
+  if (node.kind === 'Stack') {
     return (
       <div key={node.id} style={stackStyle(node)}>
         {node.children.map((child) => renderUiNode(child))}
@@ -80,7 +81,7 @@ function renderUiNode(node: UiNode): ReactNode {
     )
   }
 
-  if (node.kind === 'heading') {
+  if (node.kind === 'Heading') {
     const level = clampHeadingLevel(node.props.level)
     const Tag = `h${level}` as keyof JSX.IntrinsicElements
     const fontSize = `${Math.max(1.25, 2.2 - (level - 1) * 0.25)}rem`
@@ -101,7 +102,7 @@ function renderUiNode(node: UiNode): ReactNode {
     )
   }
 
-  if (node.kind === 'text') {
+  if (node.kind === 'Text') {
     return (
       <p
         key={node.id}
@@ -116,7 +117,7 @@ function renderUiNode(node: UiNode): ReactNode {
     )
   }
 
-  if (node.kind === 'button') {
+  if (node.kind === 'Button') {
     const variant = node.props.variant === 'ghost' ? 'ghost' : 'solid'
 
     return (
@@ -136,7 +137,7 @@ function renderUiNode(node: UiNode): ReactNode {
     )
   }
 
-  if (node.kind === 'image') {
+  if (node.kind === 'Image') {
     return (
       <img
         key={node.id}

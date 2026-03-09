@@ -1,5 +1,5 @@
 {
-  "name": "@procedural-web-composer/runtime-react",
+  "name": "@procedural-web-composer/ui-tree",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -12,11 +12,6 @@
   "scripts": {
     "build": "tsc -p tsconfig.json --noEmit",
     "typecheck": "tsc -p tsconfig.json --noEmit"
-  },
-  "dependencies": {
-    "@procedural-web-composer/shared-utils": "workspace:*",
-    "@procedural-web-composer/shared-types": "workspace:*",
-    "@procedural-web-composer/ui-tree": "workspace:*",
-    "react": "^18.3.1"
   }
 }
+

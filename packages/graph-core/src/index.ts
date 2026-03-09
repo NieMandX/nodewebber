@@ -6,6 +6,14 @@ export {
   projectDocumentSchema,
 } from './schemas'
 export { detectCycles, topoSort } from './algorithms'
+export {
+  analyzeGraphDiagnostics,
+  getGraphDiagnostics,
+} from './diagnostics'
+export type {
+  GraphDiagnostics,
+  ProjectDiagnostics,
+} from './diagnostics'
 export { validateEdges, validateGraph, validateNodes } from './validation'
 
 import type { ProjectDocument } from '@procedural-web-composer/shared-types'

@@ -1,3 +1,4 @@
+import { isUiNode, type UiNode } from '@procedural-web-composer/ui-tree'
 import type {
   GraphDocument,
   GraphEvaluation,
@@ -5,8 +6,12 @@ import type {
   NodeDefinitionResolver,
   NodeEvaluationRecord,
   NodeInstance,
-  UiNode,
 } from '@procedural-web-composer/shared-types'
+
+interface OrderedChildReference {
+  nodeId: string
+  order: number | undefined
+}
 
 export function buildUiTree(
   graph: GraphDocument,
@@ -17,7 +22,7 @@ export function buildUiTree(
   const nodesById = new Map(graph.nodes.map((node) => [node.id, node]))
   const uiByNodeId = new Map<string, UiNode>()
   const incomingStructureCount = new Map<string, number>()
-  const childrenByParentId = new Map<string, string[]>()
+  const childrenByParentId = new Map<string, OrderedChildReference[]>()
 
   for (const node of graph.nodes) {
     const record = evaluation.results[node.id]
@@ -48,14 +53,19 @@ export function buildUiTree(
 
     childrenByParentId.set(edge.from.nodeId, [
       ...(childrenByParentId.get(edge.from.nodeId) ?? []),
-      edge.to.nodeId,
+      {
+        nodeId: edge.to.nodeId,
+        order: edge.order,
+      },
     ])
   }
 
-  for (const [parentId, childIds] of childrenByParentId.entries()) {
+  for (const [parentId, childRefs] of childrenByParentId.entries()) {
     childrenByParentId.set(
       parentId,
-      [...childIds].sort((left, right) => compareNodePosition(nodesById.get(left), nodesById.get(right))),
+      [...childRefs].sort((left, right) =>
+        compareStructureChild(left, right, nodesById),
+      ),
     )
   }
 
@@ -78,7 +88,7 @@ export function buildUiTree(
 
   return {
     id: 'fragment_root',
-    kind: 'fragment',
+    kind: 'Fragment',
     props: {},
     children: roots
       .map((nodeId) => assembleNodeTree(nodeId, childrenByParentId, uiByNodeId, new Set()))
@@ -102,7 +112,7 @@ export function getPrimaryUiOutput(
 
 function assembleNodeTree(
   nodeId: string,
-  childrenByParentId: Map<string, string[]>,
+  childrenByParentId: Map<string, OrderedChildReference[]>,
   uiByNodeId: Map<string, UiNode>,
   visited: Set<string>,
 ): UiNode | null {
@@ -119,13 +129,32 @@ function assembleNodeTree(
   visited.add(nodeId)
 
   const children = (childrenByParentId.get(nodeId) ?? [])
-    .map((childId) => assembleNodeTree(childId, childrenByParentId, uiByNodeId, visited))
+    .map((child) => assembleNodeTree(child.nodeId, childrenByParentId, uiByNodeId, visited))
     .filter((child): child is UiNode => child !== null)
 
   return {
     ...uiNode,
     children,
   }
+}
+
+function compareStructureChild(
+  left: OrderedChildReference,
+  right: OrderedChildReference,
+  nodesById: Map<string, NodeInstance>,
+): number {
+  const leftHasOrder = typeof left.order === 'number'
+  const rightHasOrder = typeof right.order === 'number'
+
+  if (leftHasOrder && rightHasOrder && left.order !== right.order) {
+    return left.order! - right.order!
+  }
+
+  if (leftHasOrder !== rightHasOrder) {
+    return leftHasOrder ? -1 : 1
+  }
+
+  return compareNodePosition(nodesById.get(left.nodeId), nodesById.get(right.nodeId))
 }
 
 function compareNodePosition(left: NodeInstance | undefined, right: NodeInstance | undefined): number {
@@ -138,8 +167,4 @@ function compareNodePosition(left: NodeInstance | undefined, right: NodeInstance
   }
 
   return left.position.y - right.position.y
-}
-
-function isUiNode(value: unknown): value is UiNode {
-  return typeof value === 'object' && value !== null && 'kind' in value && 'children' in value
 }

@@ -42,6 +42,7 @@ export const edgeInstanceSchema = z.object({
   from: edgeEndpointSchema,
   to: edgeEndpointSchema,
   kind: z.enum(['data', 'structure', 'style', 'event']),
+  order: z.number().optional(),
 })
 
 export const graphDocumentSchema = z.object({

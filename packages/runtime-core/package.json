@@ -16,7 +16,7 @@
   "dependencies": {
     "@procedural-web-composer/graph-core": "workspace:*",
     "@procedural-web-composer/graph-engine": "workspace:*",
-    "@procedural-web-composer/shared-types": "workspace:*"
+    "@procedural-web-composer/shared-types": "workspace:*",
+    "@procedural-web-composer/ui-tree": "workspace:*"
   }
 }
-

@@ -16,6 +16,7 @@
     "noEmit": true,
     "baseUrl": ".",
     "paths": {
+      "@procedural-web-composer/ui-tree": ["packages/ui-tree/src/index.ts"],
       "@procedural-web-composer/shared-types": ["packages/shared-types/src/index.ts"],
       "@procedural-web-composer/shared-utils": ["packages/shared-utils/src/index.ts"],
       "@procedural-web-composer/node-registry": ["packages/node-registry/src/index.ts"],
@@ -31,4 +32,3 @@
     }
   }
 }
-

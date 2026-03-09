@@ -5,13 +5,26 @@ import type {
 
 export class NodeRegistry implements NodeDefinitionResolver {
   private definitions = new Map<string, NodeDefinition>()
+  private frozen = false
 
   registerNodeDefinition(definition: NodeDefinition): void {
+    if (this.frozen) {
+      throw new Error(`Node registry is frozen. Cannot register "${definition.type}".`)
+    }
+
     if (this.definitions.has(definition.type)) {
       throw new Error(`Node definition "${definition.type}" is already registered.`)
     }
 
     this.definitions.set(definition.type, definition)
+  }
+
+  freeze(): void {
+    this.frozen = true
+  }
+
+  isFrozen(): boolean {
+    return this.frozen
   }
 
   getNodeDefinition(type: string): NodeDefinition | undefined {
@@ -62,4 +75,9 @@ export function getNodeDefinition(
 
 export function listNodeDefinitions(registry: NodeDefinitionResolver): NodeDefinition[] {
   return registry.listNodeDefinitions()
+}
+
+export function freezeNodeRegistry(registry: NodeRegistry): NodeRegistry {
+  registry.freeze()
+  return registry
 }

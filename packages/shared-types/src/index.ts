@@ -1,3 +1,5 @@
+import type { UiNode } from '@procedural-web-composer/ui-tree'
+
 export type EdgeKind = 'data' | 'structure' | 'style' | 'event'
 
 export type ValueType =
@@ -67,6 +69,7 @@ export interface EdgeInstance {
     port: string
   }
   kind: EdgeKind
+  order?: number
 }
 
 export interface AssetReference {
@@ -114,14 +117,6 @@ export interface ThemeValue {
     headingScale: number
     bodySize: string
   }
-}
-
-export interface UiNode {
-  id: string
-  kind: string
-  props: Record<string, unknown>
-  children: UiNode[]
-  styles?: Record<string, unknown>
 }
 
 export interface EvaluationContext {

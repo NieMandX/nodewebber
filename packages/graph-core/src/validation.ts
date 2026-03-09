@@ -8,6 +8,7 @@ import type {
   ValueType,
 } from '@procedural-web-composer/shared-types'
 import { detectCycles } from './algorithms'
+import { analyzeGraphDiagnostics } from './diagnostics'
 import { projectDocumentSchema } from './schemas'
 
 export function validateGraph(
@@ -301,29 +302,11 @@ function validateGraphSemantics(
   graph: GraphDocument,
   registry?: NodeDefinitionResolver,
 ): GraphIssue[] {
+  const diagnostics = analyzeGraphDiagnostics(graph, registry)
   const issues: GraphIssue[] = []
-  const structureEdges = graph.edges.filter((edge) => edge.kind === 'structure')
-  const incomingStructureCounts = new Map<string, number>()
-  const structureChildren = new Map<string, string[]>()
-
-  for (const edge of structureEdges) {
-    incomingStructureCounts.set(
-      edge.to.nodeId,
-      (incomingStructureCounts.get(edge.to.nodeId) ?? 0) + 1,
-    )
-    structureChildren.set(edge.from.nodeId, [
-      ...(structureChildren.get(edge.from.nodeId) ?? []),
-      edge.to.nodeId,
-    ])
-  }
-
-  const pageNodes = graph.nodes.filter((node) => node.type === 'layout.page')
-  const pageRootNodes = pageNodes.filter(
-    (node) => (incomingStructureCounts.get(node.id) ?? 0) === 0,
-  )
 
   if (graph.kind === 'page') {
-    if (pageNodes.length === 0) {
+    if (diagnostics.missingPageNode) {
       issues.push({
         code: 'page_node_missing',
         message: `Page graph "${graph.name}" should contain exactly one layout.page node.`,
@@ -332,16 +315,16 @@ function validateGraphSemantics(
       })
     }
 
-    if (pageNodes.length > 1) {
+    if (diagnostics.multiplePageNodeIds.length > 0) {
       issues.push({
         code: 'multiple_page_nodes',
-        message: `Page graph "${graph.name}" contains ${pageNodes.length} layout.page nodes.`,
+        message: `Page graph "${graph.name}" contains ${diagnostics.multiplePageNodeIds.length} layout.page nodes.`,
         severity: 'warning',
         graphId: graph.id,
       })
     }
 
-    if (pageRootNodes.length === 0) {
+    if (diagnostics.missingPageRoot) {
       issues.push({
         code: 'page_root_missing',
         message: `Page graph "${graph.name}" has no root layout.page node in the structure tree.`,
@@ -351,76 +334,27 @@ function validateGraphSemantics(
     }
   }
 
-  for (const themeNode of graph.nodes.filter((node) => node.type === 'style.theme')) {
-    const isConnected = graph.edges.some(
-      (edge) => edge.from.nodeId === themeNode.id || edge.to.nodeId === themeNode.id,
-    )
-
-    if (!isConnected) {
-      issues.push({
-        code: 'unused_theme_node',
-        message: `Theme node "${themeNode.id}" is not connected.`,
-        severity: 'warning',
-        graphId: graph.id,
-        nodeId: themeNode.id,
-      })
-    }
+  for (const themeNodeId of diagnostics.unusedThemeNodeIds) {
+    issues.push({
+      code: 'unused_theme_node',
+      message: `Theme node "${themeNodeId}" is not connected.`,
+      severity: 'warning',
+      graphId: graph.id,
+      nodeId: themeNodeId,
+    })
   }
 
-  if (!registry) {
-    return issues
-  }
-
-  const uiNodes = graph.nodes.filter((node) => {
-    const definition = registry.getNodeDefinition(node.type)
-    return definition?.outputs.some((port) => port.valueType === 'ui-node') ?? false
-  })
-
-  const firstPageRoot = pageRootNodes[0]
-  const rootNodeIds =
-    graph.kind === 'page' && firstPageRoot
-      ? [firstPageRoot.id]
-      : pageRootNodes.length > 0
-        ? pageRootNodes.map((node) => node.id)
-        : uiNodes
-            .filter((node) => (incomingStructureCounts.get(node.id) ?? 0) === 0)
-            .map((node) => node.id)
-
-  const connectedUiNodes = new Set<string>()
-
-  for (const rootNodeId of rootNodeIds) {
-    visitStructureTree(rootNodeId, structureChildren, connectedUiNodes)
-  }
-
-  for (const uiNode of uiNodes) {
-    if (!connectedUiNodes.has(uiNode.id)) {
-      issues.push({
-        code: 'ui_node_orphaned',
-        message: `UI node "${uiNode.id}" is not connected to the structure tree.`,
-        severity: 'warning',
-        graphId: graph.id,
-        nodeId: uiNode.id,
-      })
-    }
+  for (const uiNodeId of diagnostics.orphanUiNodeIds) {
+    issues.push({
+      code: 'ui_node_orphaned',
+      message: `UI node "${uiNodeId}" is not connected to the structure tree.`,
+      severity: 'warning',
+      graphId: graph.id,
+      nodeId: uiNodeId,
+    })
   }
 
   return issues
-}
-
-function visitStructureTree(
-  nodeId: string,
-  structureChildren: Map<string, string[]>,
-  visited: Set<string>,
-): void {
-  if (visited.has(nodeId)) {
-    return
-  }
-
-  visited.add(nodeId)
-
-  for (const childId of structureChildren.get(nodeId) ?? []) {
-    visitStructureTree(childId, structureChildren, visited)
-  }
 }
 
 function isCompatibleEdgeKind(

@@ -196,6 +196,9 @@ importers:
       '@procedural-web-composer/shared-types':
         specifier: workspace:*
         version: link:../shared-types
+      '@procedural-web-composer/ui-tree':
+        specifier: workspace:*
+        version: link:../ui-tree
       zod:
         specifier: ^3.24.1
         version: 3.25.76
@@ -205,6 +208,9 @@ importers:
       '@procedural-web-composer/shared-types':
         specifier: workspace:*
         version: link:../shared-types
+      '@procedural-web-composer/ui-tree':
+        specifier: workspace:*
+        version: link:../ui-tree
       zod:
         specifier: ^3.24.1
         version: 3.25.76
@@ -235,6 +241,9 @@ importers:
       '@procedural-web-composer/shared-types':
         specifier: workspace:*
         version: link:../shared-types
+      '@procedural-web-composer/ui-tree':
+        specifier: workspace:*
+        version: link:../ui-tree
 
   packages/runtime-react:
     dependencies:
@@ -244,17 +253,26 @@ importers:
       '@procedural-web-composer/shared-utils':
         specifier: workspace:*
         version: link:../shared-utils
+      '@procedural-web-composer/ui-tree':
+        specifier: workspace:*
+        version: link:../ui-tree
       react:
         specifier: ^18.3.1
         version: 18.3.1
 
-  packages/shared-types: {}
+  packages/shared-types:
+    dependencies:
+      '@procedural-web-composer/ui-tree':
+        specifier: workspace:*
+        version: link:../ui-tree
 
   packages/shared-utils:
     dependencies:
       '@procedural-web-composer/shared-types':
         specifier: workspace:*
         version: link:../shared-types
+
+  packages/ui-tree: {}
 
 packages:
 
