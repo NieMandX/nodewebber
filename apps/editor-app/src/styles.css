@@ -17,12 +17,14 @@
 html,
 body,
 #root {
+  height: 100%;
   min-height: 100%;
   margin: 0;
 }
 
 body {
   min-height: 100vh;
+  overflow: hidden;
 }
 
 button,
@@ -35,14 +37,16 @@ textarea {
 .editor-shell {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr) 320px;
-  grid-template-rows: auto minmax(420px, 1fr) minmax(300px, 0.95fr);
+  grid-template-rows: auto minmax(0, 1fr) minmax(0, 0.95fr);
   grid-template-areas:
     "header header header"
     "palette canvas inspector"
     "json preview inspector";
   gap: 18px;
-  min-height: 100vh;
+  height: 100vh;
+  max-height: 100vh;
   padding: 18px;
+  overflow: hidden;
 }
 
 .app-header {
@@ -117,6 +121,7 @@ textarea {
   box-shadow: 0 24px 50px rgba(88, 61, 33, 0.08);
   animation: panel-rise 280ms ease;
   min-height: 0;
+  min-width: 0;
 }
 
 .surface-strong {
@@ -174,6 +179,8 @@ textarea {
 
 .canvas-panel {
   grid-area: canvas;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
 }
 
 .canvas-shell {
@@ -196,6 +203,7 @@ textarea {
 
 .json-panel {
   grid-area: json;
+  overflow: auto;
 }
 
 .json-actions {
@@ -251,6 +259,7 @@ textarea {
 .preview-panel {
   grid-area: preview;
   grid-template-rows: auto minmax(0, 1fr) auto auto;
+  overflow: auto;
 }
 
 .preview-shell {
@@ -698,7 +707,13 @@ textarea {
 }
 
 @media (max-width: 1200px) {
+  body {
+    overflow: auto;
+  }
+
   .editor-shell {
+    height: auto;
+    max-height: none;
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto repeat(5, minmax(280px, auto));
     grid-template-areas:
@@ -708,6 +723,7 @@ textarea {
       "inspector"
       "preview"
       "json";
+    overflow: visible;
   }
 
   .app-header {
