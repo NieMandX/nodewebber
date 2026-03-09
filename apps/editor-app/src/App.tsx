@@ -193,6 +193,7 @@ export function App(): JSX.Element {
             root={runtime.root}
             eventRuntime={runtime.eventRuntime}
             presentationRuntime={runtime.presentationRuntime}
+            embedded
           />
         </div>
         <GraphIssuesPanel

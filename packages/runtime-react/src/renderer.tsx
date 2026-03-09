@@ -21,6 +21,7 @@ export interface PreviewRendererProps {
   emptyMessage?: string
   eventRuntime: GraphEventRuntime | undefined
   presentationRuntime: PresentationRuntime | undefined
+  embedded?: boolean
 }
 
 export function PreviewRenderer(props: PreviewRendererProps): ReactNode {
@@ -37,7 +38,7 @@ export function PreviewRenderer(props: PreviewRendererProps): ReactNode {
     <GraphEventProvider eventRuntime={props.eventRuntime}>
       <PresentationProvider presentationRuntime={props.presentationRuntime}>
         <div style={{ display: 'grid', gap: '16px' }}>
-          {renderUiTree(props.root)}
+          {renderUiTree(props.root, { embedded: props.embedded })}
           <PresentationControls />
         </div>
       </PresentationProvider>
@@ -45,12 +46,18 @@ export function PreviewRenderer(props: PreviewRendererProps): ReactNode {
   )
 }
 
-export function renderUiTree(node: UiNode): ReactNode {
-  return <UiNodeRenderer node={node} />
+export function renderUiTree(
+  node: UiNode,
+  options?: {
+    embedded: boolean | undefined
+  },
+): ReactNode {
+  return <UiNodeRenderer node={node} embedded={options?.embedded} />
 }
 
 function UiNodeRenderer(props: {
   node: UiNode
+  embedded: boolean | undefined
 }): ReactNode {
   const presentation = usePresentationController()
   const node = props.node
@@ -60,13 +67,19 @@ function UiNodeRenderer(props: {
   }
 
   if (node.kind === 'Fragment') {
-    return <>{renderChildren(node.children)}</>
+    return <>{renderChildren(node.children, props.embedded)}</>
   }
 
   if (node.kind === 'Page') {
     const theme = normalizeThemeValue(node.props.theme as ThemeValue | undefined)
+    const pageStyles = toCssProperties(node.styles)
+
+    if (props.embedded) {
+      delete pageStyles.minHeight
+    }
+
     const outerStyle = {
-      ...toCssProperties(node.styles),
+      ...pageStyles,
       backgroundColor: theme.colors.background,
       color: theme.colors.text,
       fontFamily: theme.typography.fontFamily,
@@ -91,7 +104,7 @@ function UiNodeRenderer(props: {
             gap: '24px',
           }}
         >
-          {renderChildren(node.children)}
+          {renderChildren(node.children, props.embedded)}
         </div>
       </div>
     )
@@ -100,7 +113,7 @@ function UiNodeRenderer(props: {
   if (node.kind === 'Section') {
     return (
       <section key={node.id} style={sectionStyle(node)}>
-        {renderChildren(node.children)}
+        {renderChildren(node.children, props.embedded)}
       </section>
     )
   }
@@ -108,7 +121,7 @@ function UiNodeRenderer(props: {
   if (node.kind === 'Stack') {
     return (
       <div key={node.id} style={stackStyle(node)}>
-        {renderChildren(node.children)}
+        {renderChildren(node.children, props.embedded)}
       </div>
     )
   }
@@ -128,22 +141,22 @@ function UiNodeRenderer(props: {
         }}
       >
         {headerChildren.length > 0 ? (
-          <header>{renderChildren(headerChildren)}</header>
+          <header>{renderChildren(headerChildren, props.embedded)}</header>
         ) : null}
-        <main>{renderChildren(bodyChildren)}</main>
+        <main>{renderChildren(bodyChildren, props.embedded)}</main>
         {footerChildren.length > 0 ? (
-          <footer>{renderChildren(footerChildren)}</footer>
+          <footer>{renderChildren(footerChildren, props.embedded)}</footer>
         ) : null}
       </div>
     )
   }
 
   if (node.kind === 'ViewerBlock') {
-    return <ViewerBlockRenderer node={node} renderChildren={renderChildren} />
+    return <ViewerBlockRenderer node={node} renderChildren={(children) => renderChildren(children, props.embedded)} />
   }
 
   if (node.kind === 'ViewerOverlay') {
-    return <ViewerOverlayRenderer node={node} renderChildren={renderChildren} />
+    return <ViewerOverlayRenderer node={node} renderChildren={(children) => renderChildren(children, props.embedded)} />
   }
 
   if (node.kind === 'Heading') {
@@ -217,15 +230,15 @@ function UiNodeRenderer(props: {
 
   return (
       <div key={node.id} style={toCssProperties(node.styles)}>
-        {renderChildren(node.children)}
+        {renderChildren(node.children, props.embedded)}
       </div>
   )
 }
 
-function renderChildren(children: UiNode[]): ReactNode[] {
+function renderChildren(children: UiNode[], embedded?: boolean): ReactNode[] {
   return children.map((child) => (
     <React.Fragment key={child.id}>
-      <UiNodeRenderer node={child} />
+      <UiNodeRenderer node={child} embedded={embedded} />
     </React.Fragment>
   ))
 }
