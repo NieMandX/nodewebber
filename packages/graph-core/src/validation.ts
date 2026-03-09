@@ -4,13 +4,19 @@ import type {
   GraphIssue,
   GraphValidationResult,
   NodeDefinitionResolver,
+  PortDefinition,
   ProjectDocument,
   ValueType,
 } from '@procedural-web-composer/shared-types'
 import { detectCycles } from './algorithms'
 import { analyzeGraphDiagnostics } from './diagnostics'
 import { projectDocumentSchema } from './schemas'
-import { isReusableGraph, validatePortableParamDefaults } from './subgraphs'
+import {
+  getSubgraphDefinition,
+  isReusableGraph,
+  resolvePublicSlots,
+  validatePortableParamDefaults,
+} from './subgraphs'
 
 export function validateGraph(
   project: ProjectDocument,
@@ -59,7 +65,7 @@ export function validateGraph(
 
     graphIds.add(graph.id)
     issues.push(...validateNodes(graph, registry))
-    issues.push(...validateEdges(graph, registry))
+    issues.push(...validateEdges(graph, registry, project))
     issues.push(...validateGraphSemantics(project, graph, registry))
 
     for (const cycle of detectCycles(graph)) {
@@ -151,6 +157,7 @@ export function validateNodes(
 export function validateEdges(
   graph: GraphDocument,
   registry?: NodeDefinitionResolver,
+  project?: ProjectDocument,
 ): GraphIssue[] {
   const issues: GraphIssue[] = []
   const edgeIds = new Set<string>()
@@ -205,7 +212,19 @@ export function validateEdges(
     }
 
     const outputPort = sourceDefinition.outputs.find((port) => port.key === edge.from.port)
-    const inputPort = targetDefinition.inputs.find((port) => port.key === edge.to.port)
+    const inputPort =
+      targetDefinition.inputs.find((port) => port.key === edge.to.port) ??
+      getDynamicTargetInputPort(project, targetNode, edge)
+
+    if (edge.slot && edge.kind !== 'structure') {
+      issues.push({
+        code: 'slot_on_non_structure_edge',
+        message: `Edge "${edge.id}" declares slot "${edge.slot}" but only structure edges support slots.`,
+        severity: 'warning',
+        graphId: graph.id,
+        edgeId: edge.id,
+      })
+    }
 
     if (!outputPort) {
       issues.push({
@@ -219,18 +238,44 @@ export function validateEdges(
     }
 
     if (!inputPort) {
-      issues.push({
-        code: 'edge_target_port_missing',
-        message: `Edge "${edge.id}" references missing input port "${edge.to.port}" on "${targetNode.type}".`,
-        severity: 'error',
-        graphId: graph.id,
-        edgeId: edge.id,
-        nodeId: targetNode.id,
-      })
+      if (edge.kind === 'data' && targetNode.type === 'subgraph.instance') {
+        issues.push({
+          code: 'subgraph_public_param_missing',
+          message: `Edge "${edge.id}" targets unknown public param "${edge.to.port}" on subgraph instance "${targetNode.id}".`,
+          severity: 'warning',
+          graphId: graph.id,
+          edgeId: edge.id,
+          nodeId: targetNode.id,
+        })
+      } else {
+        issues.push({
+          code: 'edge_target_port_missing',
+          message: `Edge "${edge.id}" references missing input port "${edge.to.port}" on "${targetNode.type}".`,
+          severity: 'error',
+          graphId: graph.id,
+          edgeId: edge.id,
+          nodeId: targetNode.id,
+        })
+      }
     }
 
     if (!outputPort || !inputPort) {
       continue
+    }
+
+    if (edge.kind === 'structure' && edge.slot) {
+      const supportedSlots = getSupportedSlotsForNode(project, sourceNode, sourceDefinition)
+
+      if (!supportedSlots.includes(edge.slot)) {
+        issues.push({
+          code: 'structure_slot_unknown',
+          message: `Edge "${edge.id}" targets unknown slot "${edge.slot}" on node "${sourceNode.id}".`,
+          severity: 'warning',
+          graphId: graph.id,
+          edgeId: edge.id,
+          nodeId: sourceNode.id,
+        })
+      }
     }
 
     const incomingKey = `${edge.to.nodeId}:${edge.to.port}`
@@ -393,6 +438,18 @@ function validateGraphSemantics(
         graphId: graph.id,
       })
     }
+
+    const rawPublicSlots = graph.subgraph?.publicSlots ?? []
+    const uniquePublicSlots = new Set(rawPublicSlots)
+
+    if (uniquePublicSlots.size !== rawPublicSlots.length) {
+      issues.push({
+        code: 'subgraph_public_slots_duplicate',
+        message: `Reusable graph "${graph.name}" declares duplicate public slots.`,
+        severity: 'warning',
+        graphId: graph.id,
+      })
+    }
   }
 
   for (const node of graph.nodes.filter((candidate) => candidate.type === 'subgraph.instance')) {
@@ -426,6 +483,79 @@ function validateGraphSemantics(
       issues.push({
         code: 'subgraph_graph_kind_invalid',
         message: `Subgraph instance "${node.id}" must reference a graph with kind "subgraph" or "component".`,
+        severity: 'error',
+        graphId: graph.id,
+        nodeId: node.id,
+      })
+    }
+  }
+
+  if (isReusableGraph(graph)) {
+    const declaredSlots = resolvePublicSlots(graph.subgraph?.publicSlots)
+
+    for (const node of graph.nodes.filter((candidate) => candidate.type === 'subgraph.slot')) {
+      const slotName =
+        typeof node.params.name === 'string' && node.params.name.trim().length > 0
+          ? node.params.name.trim()
+          : 'children'
+
+      if (!declaredSlots.includes(slotName)) {
+        issues.push({
+          code: 'subgraph_slot_undeclared',
+          message: `Slot placeholder "${node.id}" references undeclared slot "${slotName}".`,
+          severity: 'warning',
+          graphId: graph.id,
+          nodeId: node.id,
+        })
+      }
+    }
+  } else {
+    for (const node of graph.nodes.filter((candidate) => candidate.type === 'subgraph.slot')) {
+      issues.push({
+        code: 'subgraph_slot_outside_reusable_graph',
+        message: `Slot placeholder "${node.id}" is being used outside a reusable graph.`,
+        severity: 'warning',
+        graphId: graph.id,
+        nodeId: node.id,
+      })
+    }
+  }
+
+  for (const node of graph.nodes.filter((candidate) => candidate.type === 'data.repeat')) {
+    const templateGraphId =
+      typeof node.params.itemSubgraphGraphId === 'string' &&
+      node.params.itemSubgraphGraphId.length > 0
+        ? node.params.itemSubgraphGraphId
+        : undefined
+
+    if (!templateGraphId) {
+      issues.push({
+        code: 'repeat_template_missing',
+        message: `Repeat node "${node.id}" does not declare "itemSubgraphGraphId".`,
+        severity: 'warning',
+        graphId: graph.id,
+        nodeId: node.id,
+      })
+      continue
+    }
+
+    const templateGraph = project.graphs.find((candidate) => candidate.id === templateGraphId)
+
+    if (!templateGraph) {
+      issues.push({
+        code: 'repeat_template_graph_missing',
+        message: `Repeat node "${node.id}" references missing reusable graph "${templateGraphId}".`,
+        severity: 'error',
+        graphId: graph.id,
+        nodeId: node.id,
+      })
+      continue
+    }
+
+    if (!isReusableGraph(templateGraph)) {
+      issues.push({
+        code: 'repeat_template_graph_kind_invalid',
+        message: `Repeat node "${node.id}" must reference a graph with kind "subgraph" or "component".`,
         severity: 'error',
         graphId: graph.id,
         nodeId: node.id,
@@ -488,6 +618,67 @@ function validateSubgraphReferences(project: ProjectDocument): GraphIssue[] {
 function getSubgraphGraphId(node: { params: Record<string, unknown> }): string | undefined {
   const graphId = node.params.subgraphGraphId
   return typeof graphId === 'string' && graphId.length > 0 ? graphId : undefined
+}
+
+function getDynamicTargetInputPort(
+  project: ProjectDocument | undefined,
+  targetNode: { type: string; params: Record<string, unknown> },
+  edge: EdgeInstance,
+): PortDefinition | undefined {
+  if (!project || edge.kind !== 'data' || targetNode.type !== 'subgraph.instance') {
+    return undefined
+  }
+
+  const referencedSubgraph = getSubgraphDefinition(
+    project,
+    getSubgraphGraphId(targetNode) ?? '',
+  )
+  const field = referencedSubgraph?.publicParamsSchema[edge.to.port]
+
+  if (!field) {
+    return undefined
+  }
+
+  return {
+    key: edge.to.port,
+    valueType: getValueTypeForPortableField(field.type),
+  }
+}
+
+function getSupportedSlotsForNode(
+  project: ProjectDocument | undefined,
+  node: { type: string; params: Record<string, unknown>; id: string },
+  sourceDefinition: { slots?: string[] },
+): string[] {
+  if (node.type === 'subgraph.instance') {
+    if (!project) {
+      return ['children']
+    }
+
+    return resolvePublicSlots(
+      getSubgraphDefinition(project, getSubgraphGraphId(node) ?? '')?.publicSlots,
+    )
+  }
+
+  return sourceDefinition.slots?.length ? sourceDefinition.slots : ['children']
+}
+
+function getValueTypeForPortableField(
+  type: 'string' | 'number' | 'boolean' | 'enum' | 'json' | 'string-or-number',
+): ValueType {
+  if (type === 'string' || type === 'enum') {
+    return 'string'
+  }
+
+  if (type === 'number') {
+    return 'number'
+  }
+
+  if (type === 'boolean') {
+    return 'boolean'
+  }
+
+  return 'unknown'
 }
 
 function isCompatibleEdgeKind(

@@ -3,6 +3,7 @@ export type UiNodeKind =
   | 'Page'
   | 'Section'
   | 'Stack'
+  | 'Shell'
   | 'Heading'
   | 'Text'
   | 'Button'
@@ -13,6 +14,7 @@ export interface UiNode {
   kind: UiNodeKind
   props: Record<string, unknown>
   children: UiNode[]
+  slots?: Record<string, UiNode[]>
   styles?: Record<string, unknown>
 }
 
@@ -21,6 +23,7 @@ const UI_NODE_KINDS = new Set<UiNodeKind>([
   'Page',
   'Section',
   'Stack',
+  'Shell',
   'Heading',
   'Text',
   'Button',
@@ -37,6 +40,7 @@ export function isUiNode(value: unknown): value is UiNode {
     kind?: unknown
     props?: unknown
     children?: unknown
+    slots?: unknown
     styles?: unknown
   }
 
@@ -47,6 +51,7 @@ export function isUiNode(value: unknown): value is UiNode {
     typeof candidate.props === 'object' &&
     candidate.props !== null &&
     Array.isArray(candidate.children) &&
+    (candidate.slots === undefined || isUiSlots(candidate.slots)) &&
     (candidate.styles === undefined ||
       (typeof candidate.styles === 'object' && candidate.styles !== null))
   )
@@ -78,6 +83,16 @@ export function mapUiTree(
       {
         ...node,
         children: node.children.map((child) => visit(child, node)),
+        ...(node.slots
+          ? {
+              slots: Object.fromEntries(
+                Object.entries(node.slots).map(([slotName, slotChildren]) => [
+                  slotName,
+                  slotChildren.map((child) => visit(child, node)),
+                ]),
+              ),
+            }
+          : {}),
       },
       parent,
     )
@@ -85,6 +100,18 @@ export function mapUiTree(
     return {
       ...nextNode,
       children: nextNode.children,
+      ...(nextNode.slots ? { slots: nextNode.slots } : {}),
     }
   }
+}
+
+function isUiSlots(value: unknown): value is Record<string, UiNode[]> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    return false
+  }
+
+  return Object.values(value).every(
+    (slotChildren) =>
+      Array.isArray(slotChildren) && slotChildren.every((child) => isUiNode(child)),
+  )
 }

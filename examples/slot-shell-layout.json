@@ -1,0 +1,144 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_slot_shell_layout",
+    "name": "Slot Shell Layout",
+    "createdAt": "2026-03-09T15:00:00.000Z",
+    "updatedAt": "2026-03-09T15:00:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_slot_shell_page",
+    "themeMode": "light"
+  },
+  "graphs": [
+    {
+      "id": "graph_slot_shell_page",
+      "name": "Shell Layout Demo",
+      "kind": "page",
+      "viewport": {
+        "x": -160,
+        "y": -120,
+        "zoom": 0.72
+      },
+      "nodes": [
+        {
+          "id": "node_shell_theme",
+          "type": "style.theme",
+          "version": 1,
+          "label": "Theme",
+          "position": { "x": 80, "y": 80 },
+          "params": {
+            "colors": {
+              "background": "#f5efe6",
+              "surface": "#fff9f1",
+              "text": "#201812",
+              "accent": "#c96f36"
+            },
+            "typography": {
+              "fontFamily": "\"Space Grotesk\", \"IBM Plex Sans\", sans-serif",
+              "headingScale": 1.16,
+              "bodySize": "1rem"
+            }
+          }
+        },
+        {
+          "id": "node_shell_page",
+          "type": "layout.page",
+          "version": 1,
+          "label": "Page",
+          "position": { "x": 340, "y": 120 },
+          "params": {
+            "maxWidth": 1100,
+            "padding": 36
+          }
+        },
+        {
+          "id": "node_shell_layout",
+          "type": "layout.shell",
+          "version": 1,
+          "label": "Shell",
+          "position": { "x": 680, "y": 140 },
+          "params": {
+            "padding": 28,
+            "gap": 18,
+            "background": "rgba(255,255,255,0.42)"
+          }
+        },
+        {
+          "id": "node_shell_header",
+          "type": "content.heading",
+          "version": 1,
+          "label": "Header",
+          "position": { "x": 1020, "y": 0 },
+          "params": {
+            "text": "Named layout slots",
+            "level": 1,
+            "align": "left"
+          }
+        },
+        {
+          "id": "node_shell_body",
+          "type": "content.text",
+          "version": 1,
+          "label": "Body",
+          "position": { "x": 1020, "y": 180 },
+          "params": {
+            "text": "Structure edges can now target header, body, and footer while remaining backward compatible with the default children slot."
+          }
+        },
+        {
+          "id": "node_shell_footer",
+          "type": "content.button",
+          "version": 1,
+          "label": "Footer CTA",
+          "position": { "x": 1020, "y": 360 },
+          "params": {
+            "label": "Inspect slot graph",
+            "href": "#slots",
+            "variant": "solid"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_shell_theme_page",
+          "from": { "nodeId": "node_shell_theme", "port": "theme" },
+          "to": { "nodeId": "node_shell_page", "port": "theme" },
+          "kind": "style"
+        },
+        {
+          "id": "edge_shell_page_shell",
+          "from": { "nodeId": "node_shell_page", "port": "ui" },
+          "to": { "nodeId": "node_shell_layout", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_shell_header_slot",
+          "from": { "nodeId": "node_shell_layout", "port": "ui" },
+          "to": { "nodeId": "node_shell_header", "port": "parent" },
+          "kind": "structure",
+          "slot": "header",
+          "order": 0
+        },
+        {
+          "id": "edge_shell_body_slot",
+          "from": { "nodeId": "node_shell_layout", "port": "ui" },
+          "to": { "nodeId": "node_shell_body", "port": "parent" },
+          "kind": "structure",
+          "slot": "body",
+          "order": 0
+        },
+        {
+          "id": "edge_shell_footer_slot",
+          "from": { "nodeId": "node_shell_layout", "port": "ui" },
+          "to": { "nodeId": "node_shell_footer", "port": "parent" },
+          "kind": "structure",
+          "slot": "footer",
+          "order": 0
+        }
+      ]
+    }
+  ],
+  "assets": []
+}

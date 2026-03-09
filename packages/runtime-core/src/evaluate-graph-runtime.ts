@@ -1,6 +1,7 @@
-import { getSubgraphDefinition, isReusableGraph } from '@procedural-web-composer/graph-core'
+import { getSubgraphDefinition, isReusableGraph, resolvePublicSlots } from '@procedural-web-composer/graph-core'
 import { evaluateGraph } from '@procedural-web-composer/graph-engine'
 import type {
+  EdgeInstance,
   GraphDocument,
   GraphEvaluation,
   NodeDefinitionResolver,
@@ -8,8 +9,8 @@ import type {
   ProjectDocument,
   RuntimeIssue,
 } from '@procedural-web-composer/shared-types'
-import type { UiNode } from '@procedural-web-composer/ui-tree'
-import { buildUiTree } from './build-ui-tree'
+import { isUiNode, type UiNode } from '@procedural-web-composer/ui-tree'
+import { buildUiTree, getPrimaryUiOutput } from './build-ui-tree'
 
 export interface GraphRuntimeEvaluation {
   evaluation: GraphEvaluation
@@ -33,106 +34,13 @@ export function evaluateGraphRuntime(
     graph: options.graph,
     registry: options.registry,
   })
+  const nodesById = new Map(options.graph.nodes.map((node) => [node.id, node]))
   const results = structuredClone(baseEvaluation.results)
   const issues: RuntimeIssue[] = [...baseEvaluation.issues]
+  const resolvedSpecialNodes = new Set<string>()
 
-  for (const node of options.graph.nodes.filter((candidate) => candidate.type === 'subgraph.instance')) {
-    const record =
-      results[node.id] ??
-      {
-        nodeId: node.id,
-        nodeType: node.type,
-        outputs: {},
-        issues: [],
-      }
-    const subgraphGraphId = getSubgraphGraphId(node)
-
-    if (!subgraphGraphId) {
-      const issue = createSubgraphIssue(
-        'subgraph_reference_missing',
-        `Subgraph instance "${node.id}" is missing "subgraphGraphId".`,
-        options.graph.id,
-        node.id,
-        'error',
-      )
-      record.issues = [...record.issues, issue]
-      results[node.id] = record
-      issues.push(issue)
-      continue
-    }
-
-    const referencedGraph = options.document.graphs.find(
-      (candidate) => candidate.id === subgraphGraphId,
-    )
-
-    if (!referencedGraph || !isReusableGraph(referencedGraph)) {
-      const issue = createSubgraphIssue(
-        'subgraph_reference_invalid',
-        `Subgraph instance "${node.id}" references invalid graph "${subgraphGraphId}".`,
-        options.graph.id,
-        node.id,
-        'error',
-      )
-      record.issues = [...record.issues, issue]
-      results[node.id] = record
-      issues.push(issue)
-      continue
-    }
-
-    if (options.visitedGraphIds.includes(subgraphGraphId)) {
-      const issue = createSubgraphIssue(
-        'subgraph_cycle_detected',
-        `Circular subgraph reference detected for "${referencedGraph.name}".`,
-        options.graph.id,
-        node.id,
-        'error',
-      )
-      record.issues = [...record.issues, issue]
-      results[node.id] = record
-      issues.push(issue)
-      continue
-    }
-
-    const subgraphDefinition = getSubgraphDefinition(options.document, subgraphGraphId)
-    const publicParams = {
-      ...(subgraphDefinition?.publicDefaultParams ?? {}),
-      ...extractInstancePublicParams(node.params),
-    }
-    const cacheKey = createRuntimeCacheKey(subgraphGraphId, publicParams)
-    const cached = options.runtimeCache.get(cacheKey)
-    const nestedRuntime =
-      cached ??
-      evaluateGraphRuntime({
-        ...options,
-        graph: injectSubgraphParams(referencedGraph, publicParams),
-        visitedGraphIds: [...options.visitedGraphIds, subgraphGraphId],
-      })
-
-    if (!cached) {
-      options.runtimeCache.set(cacheKey, cloneGraphRuntimeEvaluation(nestedRuntime))
-    }
-
-    const resolvedRuntime = cloneGraphRuntimeEvaluation(nestedRuntime)
-    const localIssues =
-      resolvedRuntime.root === null
-        ? [
-            createSubgraphIssue(
-              'subgraph_root_missing',
-              `Subgraph "${referencedGraph.name}" produced no renderable root.`,
-              options.graph.id,
-              node.id,
-              'warning',
-            ),
-          ]
-        : []
-
-    record.outputs = {
-      ...record.outputs,
-      ui: resolvedRuntime.root,
-    }
-    record.issues = [...record.issues, ...localIssues]
-    results[node.id] = record
-    issues.push(...localIssues, ...resolvedRuntime.issues)
+  for (const node of options.graph.nodes) {
+    resolveSpecialNode(node.id)
   }
 
   const evaluation: GraphEvaluation = {
@@ -146,32 +54,355 @@ export function evaluateGraphRuntime(
     root: buildUiTree(options.graph, evaluation, options.registry),
     issues,
   }
+
+  function resolveSpecialNode(nodeId: string): void {
+    if (resolvedSpecialNodes.has(nodeId)) {
+      return
+    }
+
+    const node = nodesById.get(nodeId)
+
+    if (!node) {
+      return
+    }
+
+    if (node.type === 'subgraph.instance') {
+      resolveSubgraphInstance(node)
+    }
+
+    if (node.type === 'data.repeat') {
+      resolveDataRepeat(node)
+    }
+
+    resolvedSpecialNodes.add(nodeId)
+  }
+
+  function resolveSubgraphInstance(node: NodeInstance): void {
+    const record = ensureRecord(node, results)
+    const subgraphGraphId = getSubgraphGraphId(node)
+
+    if (!subgraphGraphId) {
+      addRuntimeIssue(
+        record,
+        issues,
+        createRuntimeIssue(
+          'subgraph_reference_missing',
+          `Subgraph instance "${node.id}" is missing "subgraphGraphId".`,
+          options.graph.id,
+          node.id,
+          'error',
+        ),
+      )
+      return
+    }
+
+    const referencedGraph = options.document.graphs.find((candidate) => candidate.id === subgraphGraphId)
+
+    if (!referencedGraph || !isReusableGraph(referencedGraph)) {
+      addRuntimeIssue(
+        record,
+        issues,
+        createRuntimeIssue(
+          'subgraph_reference_invalid',
+          `Subgraph instance "${node.id}" references invalid graph "${subgraphGraphId}".`,
+          options.graph.id,
+          node.id,
+          'error',
+        ),
+      )
+      return
+    }
+
+    if (options.visitedGraphIds.includes(subgraphGraphId)) {
+      addRuntimeIssue(
+        record,
+        issues,
+        createRuntimeIssue(
+          'subgraph_cycle_detected',
+          `Circular subgraph reference detected for "${referencedGraph.name}".`,
+          options.graph.id,
+          node.id,
+          'error',
+        ),
+      )
+      return
+    }
+
+    const subgraphDefinition = getSubgraphDefinition(options.document, subgraphGraphId)
+    const dataBoundParams = resolveIncomingDataParams(node)
+    const slotAssignments = collectSlotAssignments(node)
+    const publicParams = {
+      ...(subgraphDefinition?.publicDefaultParams ?? {}),
+      ...extractInstancePublicParams(node.params),
+      ...dataBoundParams,
+    }
+    const cacheKey = createRuntimeCacheKey('subgraph', {
+      graphId: subgraphGraphId,
+      params: publicParams,
+      slots: summarizeSlotAssignments(slotAssignments),
+    })
+    const cached = options.runtimeCache.get(cacheKey)
+    const nestedRuntime =
+      cached ??
+      evaluateGraphRuntime({
+        ...options,
+        graph: injectSubgraphRuntimeState(referencedGraph, publicParams, slotAssignments),
+        visitedGraphIds: [...options.visitedGraphIds, subgraphGraphId],
+      })
+
+    if (!cached) {
+      options.runtimeCache.set(cacheKey, cloneGraphRuntimeEvaluation(nestedRuntime))
+    }
+
+    const resolvedRuntime = cloneGraphRuntimeEvaluation(nestedRuntime)
+
+    if (!resolvedRuntime.root) {
+      addRuntimeIssue(
+        record,
+        issues,
+        createRuntimeIssue(
+          'subgraph_root_missing',
+          `Subgraph "${referencedGraph.name}" produced no renderable root.`,
+          options.graph.id,
+          node.id,
+          'warning',
+        ),
+      )
+      return
+    }
+
+    record.outputs = {
+      ...record.outputs,
+      ui: resolvedRuntime.root,
+    }
+    issues.push(...resolvedRuntime.issues)
+  }
+
+  function resolveDataRepeat(node: NodeInstance): void {
+    const record = ensureRecord(node, results)
+    const itemsValue = resolveIncomingDataParams(node).items
+    const items = Array.isArray(itemsValue) ? itemsValue : []
+    const itemSubgraphGraphId =
+      typeof node.params.itemSubgraphGraphId === 'string' && node.params.itemSubgraphGraphId.length > 0
+        ? node.params.itemSubgraphGraphId
+        : undefined
+
+    if (!itemSubgraphGraphId) {
+      addRuntimeIssue(
+        record,
+        issues,
+        createRuntimeIssue(
+          'repeat_template_missing',
+          `Repeat node "${node.id}" is missing "itemSubgraphGraphId".`,
+          options.graph.id,
+          node.id,
+          'warning',
+        ),
+      )
+      return
+    }
+
+    const referencedGraph = options.document.graphs.find((candidate) => candidate.id === itemSubgraphGraphId)
+
+    if (!referencedGraph || !isReusableGraph(referencedGraph)) {
+      addRuntimeIssue(
+        record,
+        issues,
+        createRuntimeIssue(
+          'repeat_template_invalid',
+          `Repeat node "${node.id}" references invalid graph "${itemSubgraphGraphId}".`,
+          options.graph.id,
+          node.id,
+          'error',
+        ),
+      )
+      return
+    }
+
+    if (options.visitedGraphIds.includes(itemSubgraphGraphId)) {
+      addRuntimeIssue(
+        record,
+        issues,
+        createRuntimeIssue(
+          'repeat_cycle_detected',
+          `Repeat node "${node.id}" references "${referencedGraph.name}" recursively.`,
+          options.graph.id,
+          node.id,
+          'error',
+        ),
+      )
+      return
+    }
+
+    const repeatedChildren: UiNode[] = []
+
+    for (const [index, item] of items.entries()) {
+      const cacheKey = createRuntimeCacheKey('repeat-item', {
+        graphId: itemSubgraphGraphId,
+        params: {
+          item,
+          index,
+        },
+      })
+      const cached = options.runtimeCache.get(cacheKey)
+      const nestedRuntime =
+        cached ??
+        evaluateGraphRuntime({
+          ...options,
+          graph: injectSubgraphRuntimeState(
+            referencedGraph,
+            {
+              ...(getSubgraphDefinition(options.document, itemSubgraphGraphId)?.publicDefaultParams ?? {}),
+              item,
+              index,
+            },
+            {},
+          ),
+          visitedGraphIds: [...options.visitedGraphIds, itemSubgraphGraphId],
+        })
+
+      if (!cached) {
+        options.runtimeCache.set(cacheKey, cloneGraphRuntimeEvaluation(nestedRuntime))
+      }
+
+      const resolvedRuntime = cloneGraphRuntimeEvaluation(nestedRuntime)
+
+      if (resolvedRuntime.root) {
+        appendRepeatedRoot(repeatedChildren, resolvedRuntime.root)
+      }
+
+      issues.push(...resolvedRuntime.issues)
+    }
+
+    record.outputs = {
+      ...record.outputs,
+      ui: {
+        id: node.id,
+        kind: 'Fragment',
+        props: {},
+        children: repeatedChildren,
+      } satisfies UiNode,
+    }
+  }
+
+  function resolveIncomingDataParams(node: NodeInstance): Record<string, unknown> {
+    const params: Record<string, unknown> = {}
+
+    for (const edge of options.graph.edges.filter(
+      (candidate) => candidate.kind === 'data' && candidate.to.nodeId === node.id,
+    )) {
+      const sourceNode = nodesById.get(edge.from.nodeId)
+
+      if (sourceNode && isSpecialUiNode(sourceNode.type)) {
+        resolveSpecialNode(sourceNode.id)
+      }
+
+      params[edge.to.port] = results[edge.from.nodeId]?.outputs[edge.from.port]
+    }
+
+    return params
+  }
+
+  function collectSlotAssignments(node: NodeInstance): Record<string, UiNode[]> {
+    const assignments = new Map<string, UiNode[]>()
+    const supportedSlots = getSupportedSlotsForNode(node)
+    const structureEdges = options.graph.edges
+      .filter((edge) => edge.kind === 'structure' && edge.from.nodeId === node.id)
+      .sort((left, right) => compareStructureEdges(left, right, nodesById))
+
+    for (const edge of structureEdges) {
+      const childNode = nodesById.get(edge.to.nodeId)
+
+      if (!childNode) {
+        continue
+      }
+
+      if (isSpecialUiNode(childNode.type)) {
+        resolveSpecialNode(childNode.id)
+      }
+
+      const childRecord = results[childNode.id]
+
+      if (!childRecord) {
+        continue
+      }
+
+      const maybeUi = getPrimaryUiOutput(
+        options.registry.getNodeDefinition(childNode.type),
+        childRecord,
+      )
+
+      if (!isUiNode(maybeUi)) {
+        continue
+      }
+
+      const requestedSlot = edge.slot?.trim()
+      const slotName =
+        requestedSlot && supportedSlots.includes(requestedSlot)
+          ? requestedSlot
+          : 'children'
+      assignments.set(slotName, [
+        ...(assignments.get(slotName) ?? []),
+        structuredClone(maybeUi),
+      ])
+    }
+
+    return Object.fromEntries(assignments)
+  }
+
+  function getSupportedSlotsForNode(node: NodeInstance): string[] {
+    if (node.type === 'subgraph.instance') {
+      return resolvePublicSlots(
+        getSubgraphDefinition(options.document, getSubgraphGraphId(node) ?? '')?.publicSlots,
+      )
+    }
+
+    const definitionSlots = options.registry.getNodeDefinition(node.type)?.slots
+    return definitionSlots?.length ? definitionSlots : ['children']
+  }
 }
 
-function injectSubgraphParams(
+function injectSubgraphRuntimeState(
   graph: GraphDocument,
   publicParams: Record<string, unknown>,
+  slotAssignments: Record<string, UiNode[]>,
 ): GraphDocument {
   const nextGraph = structuredClone(graph)
 
   nextGraph.nodes = nextGraph.nodes.map((node) => {
-    if (node.type !== 'subgraph.param') {
-      return node
+    if (node.type === 'subgraph.param') {
+      const key = typeof node.params.key === 'string' ? node.params.key : undefined
+      const nextParams = { ...node.params }
+
+      if (key && key in publicParams) {
+        nextParams.__resolvedValue = publicParams[key]
+      } else {
+        delete nextParams.__resolvedValue
+      }
+
+      return {
+        ...node,
+        params: nextParams,
+      }
     }
 
-    const key = typeof node.params.key === 'string' ? node.params.key : undefined
-    const nextParams = { ...node.params }
+    if (node.type === 'subgraph.slot') {
+      const slotName = typeof node.params.name === 'string' ? node.params.name : 'children'
+      const fallbackMode = node.params.fallbackMode === 'children' ? 'children' : 'empty'
+      const resolvedSlotChildren =
+        slotAssignments[slotName] ??
+        (fallbackMode === 'children' ? slotAssignments.children ?? [] : [])
 
-    if (key && key in publicParams) {
-      nextParams.__resolvedValue = publicParams[key]
-    } else {
-      delete nextParams.__resolvedValue
+      return {
+        ...node,
+        params: {
+          ...node.params,
+          __resolvedSlotChildren: structuredClone(resolvedSlotChildren),
+        },
+      }
     }
 
-    return {
-      ...node,
-      params: nextParams,
-    }
+    return node
   })
 
   return nextGraph
@@ -185,13 +416,26 @@ function extractInstancePublicParams(
   )
 }
 
+function summarizeSlotAssignments(slotAssignments: Record<string, UiNode[]>): Record<string, string[]> {
+  return Object.fromEntries(
+    Object.entries(slotAssignments).map(([slotName, slotChildren]) => [
+      slotName,
+      slotChildren.map((child) => child.id),
+    ]),
+  )
+}
+
 function createRuntimeCacheKey(
-  graphId: string,
-  publicParams: Record<string, unknown>,
+  kind: string,
+  payload: Record<string, unknown>,
 ): string {
+  const serializedPayload = sortForSerialization(payload)
+
   return JSON.stringify({
-    graphId,
-    publicParams: sortForSerialization(publicParams),
+    kind,
+    ...(typeof serializedPayload === 'object' && serializedPayload !== null
+      ? serializedPayload
+      : {}),
   })
 }
 
@@ -226,7 +470,41 @@ function getSubgraphGraphId(node: NodeInstance): string | undefined {
   return typeof graphId === 'string' && graphId.length > 0 ? graphId : undefined
 }
 
-function createSubgraphIssue(
+function ensureRecord(
+  node: NodeInstance,
+  results?: GraphEvaluation['results'],
+): NonNullable<GraphEvaluation['results'][string]> {
+  if (!results) {
+    throw new Error('Graph evaluation results are required.')
+  }
+
+  const existingRecord = results[node.id]
+
+  if (existingRecord) {
+    return existingRecord
+  }
+
+  const nextRecord = {
+    nodeId: node.id,
+    nodeType: node.type,
+    outputs: {},
+    issues: [],
+  }
+
+  results[node.id] = nextRecord
+  return nextRecord
+}
+
+function addRuntimeIssue(
+  record: NonNullable<GraphEvaluation['results'][string]>,
+  issues: RuntimeIssue[],
+  issue: RuntimeIssue,
+): void {
+  record.issues = [...record.issues, issue]
+  issues.push(issue)
+}
+
+function createRuntimeIssue(
   code: string,
   message: string,
   graphId: string,
@@ -240,4 +518,47 @@ function createSubgraphIssue(
     graphId,
     nodeId,
   }
+}
+
+function compareStructureEdges(
+  left: EdgeInstance,
+  right: EdgeInstance,
+  nodesById: Map<string, NodeInstance>,
+): number {
+  const leftHasOrder = typeof left.order === 'number'
+  const rightHasOrder = typeof right.order === 'number'
+
+  if (leftHasOrder && rightHasOrder && left.order !== right.order) {
+    return left.order! - right.order!
+  }
+
+  if (leftHasOrder !== rightHasOrder) {
+    return leftHasOrder ? -1 : 1
+  }
+
+  const leftNode = nodesById.get(left.to.nodeId)
+  const rightNode = nodesById.get(right.to.nodeId)
+
+  if (!leftNode || !rightNode) {
+    return 0
+  }
+
+  if (leftNode.position.y === rightNode.position.y) {
+    return leftNode.position.x - rightNode.position.x
+  }
+
+  return leftNode.position.y - rightNode.position.y
+}
+
+function appendRepeatedRoot(children: UiNode[], root: UiNode): void {
+  if (root.kind === 'Fragment') {
+    children.push(...root.children)
+    return
+  }
+
+  children.push(root)
+}
+
+function isSpecialUiNode(type: string): boolean {
+  return type === 'subgraph.instance' || type === 'data.repeat'
 }

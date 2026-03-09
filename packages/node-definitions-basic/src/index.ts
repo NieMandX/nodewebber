@@ -192,14 +192,26 @@ export const imageNodeDefinition: NodeDefinition = {
   version: 1,
   title: 'Image',
   category: 'Content',
-  inputs: [parentInput],
+  inputs: [
+    parentInput,
+    {
+      key: 'src',
+      valueType: 'string',
+    },
+    {
+      key: 'alt',
+      valueType: 'string',
+    },
+  ],
   outputs: [uiOutput],
   defaultParams: imageDefaultParams,
   paramsSchema: imageParamsSchema,
-  evaluate: (node) => {
+  evaluate: (node, ctx) => {
     const params = imageParamsSchema.safeParse(node.params).success
       ? imageParamsSchema.parse(node.params)
       : imageDefaultParams
+    const src = ctx.getInput<string>('src') ?? params.src
+    const alt = ctx.getInput<string>('alt') ?? params.alt
 
     return {
       outputs: {
@@ -207,8 +219,8 @@ export const imageNodeDefinition: NodeDefinition = {
           id: node.id,
           kind: 'Image',
           props: {
-            src: params.src,
-            alt: params.alt,
+            src,
+            alt,
             fit: params.fit,
           },
           children: [],

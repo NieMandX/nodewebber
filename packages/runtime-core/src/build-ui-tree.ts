@@ -11,6 +11,7 @@ import type {
 interface OrderedChildReference {
   nodeId: string
   order: number | undefined
+  slot: string
 }
 
 export function buildUiTree(
@@ -20,9 +21,13 @@ export function buildUiTree(
 ): UiNode | null {
   const structureEdges = graph.edges.filter((edge) => edge.kind === 'structure')
   const nodesById = new Map(graph.nodes.map((node) => [node.id, node]))
+  const definitionsByNodeId = new Map(
+    graph.nodes.map((node) => [node.id, registry.getNodeDefinition(node.type)]),
+  )
   const uiByNodeId = new Map<string, UiNode>()
   const incomingStructureCount = new Map<string, number>()
-  const childrenByParentId = new Map<string, OrderedChildReference[]>()
+  const specialStructureChildNodeIds = new Set<string>()
+  const childrenByParentId = new Map<string, Map<string, OrderedChildReference[]>>()
 
   for (const node of graph.nodes) {
     const record = evaluation.results[node.id]
@@ -37,11 +42,17 @@ export function buildUiTree(
       uiByNodeId.set(node.id, {
         ...maybeUi,
         children: [],
+        ...(maybeUi.slots ? { slots: {} } : {}),
       })
     }
   }
 
   for (const edge of structureEdges) {
+    if (nodesById.get(edge.from.nodeId)?.type === 'subgraph.instance') {
+      specialStructureChildNodeIds.add(edge.to.nodeId)
+      continue
+    }
+
     if (!uiByNodeId.has(edge.from.nodeId) || !uiByNodeId.has(edge.to.nodeId)) {
       continue
     }
@@ -51,27 +62,38 @@ export function buildUiTree(
       (incomingStructureCount.get(edge.to.nodeId) ?? 0) + 1,
     )
 
-    childrenByParentId.set(edge.from.nodeId, [
-      ...(childrenByParentId.get(edge.from.nodeId) ?? []),
+    const definition = definitionsByNodeId.get(edge.from.nodeId)
+    const slot = resolveStructureSlot(definition, edge.slot)
+    const slotsForParent = childrenByParentId.get(edge.from.nodeId) ?? new Map<string, OrderedChildReference[]>()
+
+    slotsForParent.set(slot, [
+      ...(slotsForParent.get(slot) ?? []),
       {
         nodeId: edge.to.nodeId,
         order: edge.order,
+        slot,
       },
     ])
+    childrenByParentId.set(edge.from.nodeId, slotsForParent)
   }
 
-  for (const [parentId, childRefs] of childrenByParentId.entries()) {
-    childrenByParentId.set(
-      parentId,
-      [...childRefs].sort((left, right) =>
-        compareStructureChild(left, right, nodesById),
-      ),
-    )
+  for (const [parentId, slotReferences] of childrenByParentId.entries()) {
+    for (const [slot, childRefs] of slotReferences.entries()) {
+      slotReferences.set(
+        slot,
+        [...childRefs].sort((left, right) => compareStructureChild(left, right, nodesById)),
+      )
+    }
+
+    childrenByParentId.set(parentId, slotReferences)
   }
 
   const roots = graph.nodes
     .filter(
-      (node) => uiByNodeId.has(node.id) && (incomingStructureCount.get(node.id) ?? 0) === 0,
+      (node) =>
+        uiByNodeId.has(node.id) &&
+        (incomingStructureCount.get(node.id) ?? 0) === 0 &&
+        !specialStructureChildNodeIds.has(node.id),
     )
     .map((node) => node.id)
 
@@ -112,7 +134,7 @@ export function getPrimaryUiOutput(
 
 function assembleNodeTree(
   nodeId: string,
-  childrenByParentId: Map<string, OrderedChildReference[]>,
+  childrenByParentId: Map<string, Map<string, OrderedChildReference[]>>,
   uiByNodeId: Map<string, UiNode>,
   visited: Set<string>,
 ): UiNode | null {
@@ -128,13 +150,22 @@ function assembleNodeTree(
 
   visited.add(nodeId)
 
-  const children = (childrenByParentId.get(nodeId) ?? [])
-    .map((child) => assembleNodeTree(child.nodeId, childrenByParentId, uiByNodeId, visited))
-    .filter((child): child is UiNode => child !== null)
+  const slotReferences = childrenByParentId.get(nodeId) ?? new Map<string, OrderedChildReference[]>()
+  const resolvedSlotsEntries = [...slotReferences.entries()]
+    .map(([slotName, childRefs]) => [
+      slotName,
+      childRefs
+        .map((child) => assembleNodeTree(child.nodeId, childrenByParentId, uiByNodeId, visited))
+        .filter((child): child is UiNode => child !== null),
+    ] as const)
+    .filter((entry) => entry[1].length > 0)
+  const resolvedSlots = Object.fromEntries(resolvedSlotsEntries)
+  const children = resolvedSlots.children ?? []
 
   return {
     ...uiNode,
     children,
+    ...(Object.keys(resolvedSlots).length > 0 ? { slots: resolvedSlots } : {}),
   }
 }
 
@@ -167,4 +198,17 @@ function compareNodePosition(left: NodeInstance | undefined, right: NodeInstance
   }
 
   return left.position.y - right.position.y
+}
+
+function resolveStructureSlot(
+  nodeDefinition: NodeDefinition | undefined,
+  requestedSlot: string | undefined,
+): string {
+  const supportedSlots = nodeDefinition?.slots?.length ? nodeDefinition.slots : ['children']
+
+  if (!requestedSlot || requestedSlot.length === 0) {
+    return 'children'
+  }
+
+  return supportedSlots.includes(requestedSlot) ? requestedSlot : 'children'
 }

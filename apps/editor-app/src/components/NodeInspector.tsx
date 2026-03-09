@@ -8,6 +8,7 @@ import type {
   NodeDefinitionResolver,
   PortableParamSchema,
   PortDefinition,
+  ValueType,
 } from '@procedural-web-composer/shared-types'
 import { useStore } from 'zustand'
 
@@ -44,8 +45,21 @@ export function NodeInspector(props: NodeInspectorProps): JSX.Element {
     node.type === 'subgraph.instance'
       ? getSchemaFields(referencedSubgraph?.publicParamsSchema ?? {})
       : getSchemaFields(definition.paramsSchema)
+  const inputs =
+    node.type === 'subgraph.instance'
+      ? [
+          ...definition.inputs,
+          ...getPublicParamInputPorts(referencedSubgraph?.publicParamsSchema ?? {}),
+        ]
+      : definition.inputs
+  const slotNames =
+    node.type === 'subgraph.instance'
+      ? referencedSubgraph?.publicSlots ?? ['children']
+      : definition.slots?.length
+        ? definition.slots
+        : []
   const bindableInputKeys = new Set(
-    definition.inputs
+    inputs
       .filter((input) => input.valueType === 'string' || input.valueType === 'number' || input.valueType === 'boolean')
       .map((input) => input.key),
   )
@@ -66,14 +80,21 @@ export function NodeInspector(props: NodeInspectorProps): JSX.Element {
             <span className="field-caption">Node ID</span>
             <code className="code-chip">{node.id}</code>
           </div>
-          {node.type === 'subgraph.instance' ? (
-            <div>
-              <span className="field-caption">Referenced graph</span>
-              <strong>{referencedSubgraph?.title ?? 'Missing component'}</strong>
-              <small>{referencedSubgraphId ?? 'No graph id set'}</small>
-            </div>
-          ) : null}
-        </div>
+        {node.type === 'subgraph.instance' ? (
+          <div>
+            <span className="field-caption">Referenced graph</span>
+            <strong>{referencedSubgraph?.title ?? 'Missing component'}</strong>
+            <small>{referencedSubgraphId ?? 'No graph id set'}</small>
+          </div>
+        ) : null}
+        {slotNames.length > 0 ? (
+          <div>
+            <span className="field-caption">Slots</span>
+            <strong>{slotNames.join(', ')}</strong>
+            <small>{slotNames.length} available slot{slotNames.length === 1 ? '' : 's'}</small>
+          </div>
+        ) : null}
+      </div>
         <label className="inspector-field">
           <span className="field-caption">Label</span>
           <input
@@ -96,10 +117,10 @@ export function NodeInspector(props: NodeInspectorProps): JSX.Element {
       <section className="inspector-section">
         <header className="inspector-section-header">Bindings</header>
         <div className="binding-list">
-          {definition.inputs.length === 0 ? (
+          {inputs.length === 0 ? (
             <p className="muted">This node has no inputs.</p>
           ) : (
-            definition.inputs.map((input) => (
+            inputs.map((input) => (
               <BindingRow
                 key={input.key}
                 input={input}
@@ -384,4 +405,29 @@ function unwrapSchema(schema: unknown): z.ZodTypeAny {
   }
 
   return currentSchema
+}
+
+function getPublicParamInputPorts(schema: PortableParamSchema): PortDefinition[] {
+  return Object.entries(schema).map(([key, field]) => ({
+    key,
+    valueType: getValueTypeForPortableField(field),
+  }))
+}
+
+function getValueTypeForPortableField(field: {
+  type: PortableParamSchema[keyof PortableParamSchema]['type']
+}): ValueType {
+  if (field.type === 'string' || field.type === 'enum') {
+    return 'string'
+  }
+
+  if (field.type === 'number') {
+    return 'number'
+  }
+
+  if (field.type === 'boolean') {
+    return 'boolean'
+  }
+
+  return 'unknown'
 }

@@ -18,6 +18,7 @@ export function getSubgraphDefinitions(project: ProjectDocument): SubgraphDefini
       title: graph.name,
       publicParamsSchema: graph.subgraph?.publicParamsSchema ?? {},
       publicDefaultParams: graph.subgraph?.publicDefaultParams ?? {},
+      publicSlots: resolvePublicSlots(graph.subgraph?.publicSlots),
     }))
 }
 
@@ -83,4 +84,14 @@ export function matchesPortableParamField(
   }
 
   return typeof value === 'string' && (field.options?.includes(value) ?? false)
+}
+
+export function resolvePublicSlots(publicSlots: string[] | undefined): string[] {
+  const normalized = (publicSlots ?? [])
+    .map((slot) => slot.trim())
+    .filter((slot) => slot.length > 0)
+
+  const uniqueSlots = [...new Set(normalized)]
+
+  return uniqueSlots.length > 0 ? uniqueSlots : ['children']
 }

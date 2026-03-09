@@ -1,0 +1,305 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_subgraph_slot_actions",
+    "name": "Subgraph Slot Actions",
+    "createdAt": "2026-03-09T15:10:00.000Z",
+    "updatedAt": "2026-03-09T15:10:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_slot_actions_page",
+    "themeMode": "light"
+  },
+  "graphs": [
+    {
+      "id": "graph_slot_actions_page",
+      "name": "Slot Actions Demo",
+      "kind": "page",
+      "viewport": {
+        "x": -140,
+        "y": -110,
+        "zoom": 0.72
+      },
+      "nodes": [
+        {
+          "id": "node_actions_theme",
+          "type": "style.theme",
+          "version": 1,
+          "label": "Theme",
+          "position": { "x": 80, "y": 80 },
+          "params": {
+            "colors": {
+              "background": "#f3ede5",
+              "surface": "#fffaf2",
+              "text": "#211914",
+              "accent": "#b8653a"
+            },
+            "typography": {
+              "fontFamily": "\"Space Grotesk\", \"IBM Plex Sans\", sans-serif",
+              "headingScale": 1.18,
+              "bodySize": "1rem"
+            }
+          }
+        },
+        {
+          "id": "node_actions_page",
+          "type": "layout.page",
+          "version": 1,
+          "label": "Page",
+          "position": { "x": 340, "y": 120 },
+          "params": {
+            "maxWidth": 1120,
+            "padding": 36
+          }
+        },
+        {
+          "id": "node_actions_hero",
+          "type": "subgraph.instance",
+          "version": 1,
+          "label": "Hero With Actions",
+          "position": { "x": 680, "y": 160 },
+          "params": {
+            "subgraphGraphId": "graph_component_slot_hero",
+            "title": "Slot-aware reusable components",
+            "body": "Subgraphs can now accept child content through named structure slots."
+          }
+        },
+        {
+          "id": "node_actions_body_copy",
+          "type": "content.text",
+          "version": 1,
+          "label": "Injected Copy",
+          "position": { "x": 1040, "y": 40 },
+          "params": {
+            "text": "This copy is injected through the default children slot of the reusable hero."
+          }
+        },
+        {
+          "id": "node_actions_primary",
+          "type": "content.button",
+          "version": 1,
+          "label": "Primary Action",
+          "position": { "x": 1040, "y": 240 },
+          "params": {
+            "label": "Open slots",
+            "href": "#actions",
+            "variant": "solid"
+          }
+        },
+        {
+          "id": "node_actions_secondary",
+          "type": "content.button",
+          "version": 1,
+          "label": "Secondary Action",
+          "position": { "x": 1040, "y": 420 },
+          "params": {
+            "label": "Inspect subgraph",
+            "href": "#subgraph",
+            "variant": "ghost"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_actions_theme_page",
+          "from": { "nodeId": "node_actions_theme", "port": "theme" },
+          "to": { "nodeId": "node_actions_page", "port": "theme" },
+          "kind": "style"
+        },
+        {
+          "id": "edge_actions_page_hero",
+          "from": { "nodeId": "node_actions_page", "port": "ui" },
+          "to": { "nodeId": "node_actions_hero", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_actions_hero_children",
+          "from": { "nodeId": "node_actions_hero", "port": "ui" },
+          "to": { "nodeId": "node_actions_body_copy", "port": "parent" },
+          "kind": "structure",
+          "slot": "children",
+          "order": 0
+        },
+        {
+          "id": "edge_actions_hero_primary",
+          "from": { "nodeId": "node_actions_hero", "port": "ui" },
+          "to": { "nodeId": "node_actions_primary", "port": "parent" },
+          "kind": "structure",
+          "slot": "actions",
+          "order": 0
+        },
+        {
+          "id": "edge_actions_hero_secondary",
+          "from": { "nodeId": "node_actions_hero", "port": "ui" },
+          "to": { "nodeId": "node_actions_secondary", "port": "parent" },
+          "kind": "structure",
+          "slot": "actions",
+          "order": 1
+        }
+      ]
+    },
+    {
+      "id": "graph_component_slot_hero",
+      "name": "Hero With Actions",
+      "kind": "subgraph",
+      "subgraph": {
+        "publicParamsSchema": {
+          "title": { "type": "string" },
+          "body": { "type": "string" }
+        },
+        "publicDefaultParams": {
+          "title": "Reusable hero title",
+          "body": "Reusable hero body"
+        },
+        "publicSlots": ["children", "actions"]
+      },
+      "viewport": {
+        "x": 0,
+        "y": 0,
+        "zoom": 0.88
+      },
+      "nodes": [
+        {
+          "id": "node_slot_hero_section",
+          "type": "layout.section",
+          "version": 1,
+          "label": "Section",
+          "position": { "x": 520, "y": 140 },
+          "params": {
+            "paddingY": 40,
+            "background": "rgba(255,255,255,0.38)"
+          }
+        },
+        {
+          "id": "node_slot_hero_stack",
+          "type": "layout.stack",
+          "version": 1,
+          "label": "Stack",
+          "position": { "x": 860, "y": 140 },
+          "params": {
+            "direction": "column",
+            "gap": 16,
+            "align": "stretch"
+          }
+        },
+        {
+          "id": "node_slot_hero_heading",
+          "type": "content.heading",
+          "version": 1,
+          "label": "Heading",
+          "position": { "x": 1180, "y": 0 },
+          "params": {
+            "text": "Reusable hero title",
+            "level": 1,
+            "align": "left"
+          }
+        },
+        {
+          "id": "node_slot_hero_text",
+          "type": "content.text",
+          "version": 1,
+          "label": "Body",
+          "position": { "x": 1180, "y": 180 },
+          "params": {
+            "text": "Reusable hero body"
+          }
+        },
+        {
+          "id": "node_slot_children",
+          "type": "subgraph.slot",
+          "version": 1,
+          "label": "Children Slot",
+          "position": { "x": 1180, "y": 360 },
+          "params": {
+            "name": "children",
+            "fallbackMode": "empty"
+          }
+        },
+        {
+          "id": "node_slot_actions",
+          "type": "subgraph.slot",
+          "version": 1,
+          "label": "Actions Slot",
+          "position": { "x": 1180, "y": 540 },
+          "params": {
+            "name": "actions",
+            "fallbackMode": "empty"
+          }
+        },
+        {
+          "id": "node_slot_param_title",
+          "type": "subgraph.param",
+          "version": 1,
+          "label": "title",
+          "position": { "x": 160, "y": 0 },
+          "params": {
+            "key": "title",
+            "fallbackValue": "Reusable hero title"
+          }
+        },
+        {
+          "id": "node_slot_param_body",
+          "type": "subgraph.param",
+          "version": 1,
+          "label": "body",
+          "position": { "x": 160, "y": 180 },
+          "params": {
+            "key": "body",
+            "fallbackValue": "Reusable hero body"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_slot_section_stack",
+          "from": { "nodeId": "node_slot_hero_section", "port": "ui" },
+          "to": { "nodeId": "node_slot_hero_stack", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_slot_stack_heading",
+          "from": { "nodeId": "node_slot_hero_stack", "port": "ui" },
+          "to": { "nodeId": "node_slot_hero_heading", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_slot_stack_text",
+          "from": { "nodeId": "node_slot_hero_stack", "port": "ui" },
+          "to": { "nodeId": "node_slot_hero_text", "port": "parent" },
+          "kind": "structure",
+          "order": 1
+        },
+        {
+          "id": "edge_slot_stack_children",
+          "from": { "nodeId": "node_slot_hero_stack", "port": "ui" },
+          "to": { "nodeId": "node_slot_children", "port": "parent" },
+          "kind": "structure",
+          "order": 2
+        },
+        {
+          "id": "edge_slot_stack_actions",
+          "from": { "nodeId": "node_slot_hero_stack", "port": "ui" },
+          "to": { "nodeId": "node_slot_actions", "port": "parent" },
+          "kind": "structure",
+          "order": 3
+        },
+        {
+          "id": "edge_slot_param_title",
+          "from": { "nodeId": "node_slot_param_title", "port": "value" },
+          "to": { "nodeId": "node_slot_hero_heading", "port": "text" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_slot_param_body",
+          "from": { "nodeId": "node_slot_param_body", "port": "value" },
+          "to": { "nodeId": "node_slot_hero_text", "port": "text" },
+          "kind": "data"
+        }
+      ]
+    }
+  ],
+  "assets": []
+}

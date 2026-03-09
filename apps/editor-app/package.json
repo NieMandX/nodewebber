@@ -12,6 +12,7 @@
     "@procedural-web-composer/editor-core": "workspace:*",
     "@procedural-web-composer/editor-reactflow": "workspace:*",
     "@procedural-web-composer/node-definitions-basic": "workspace:*",
+    "@procedural-web-composer/node-definitions-data": "workspace:*",
     "@procedural-web-composer/node-definitions-layout": "workspace:*",
     "@procedural-web-composer/node-definitions-style": "workspace:*",
     "@procedural-web-composer/node-definitions-subgraph": "workspace:*",

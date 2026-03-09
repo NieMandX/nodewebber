@@ -6,7 +6,10 @@ import type {
   GraphIssue,
   NodeDefinitionResolver,
   NodeInstance,
+  PortableParamSchema,
+  PortableParamSchemaField,
   PortDefinition,
+  ValueType,
 } from '@procedural-web-composer/shared-types'
 import {
   Background,
@@ -49,6 +52,7 @@ interface EditorCanvasNodeData extends Record<string, unknown> {
   params: Record<string, unknown>
   inputs: PortDefinition[]
   outputs: PortDefinition[]
+  slotNames: string[]
   invalid: boolean
   invalidMessages: string[]
   hasClipboard: boolean
@@ -90,6 +94,25 @@ export function EditorCanvas(props: EditorCanvasProps): JSX.Element {
     clipboardNodeId !== undefined && graph.nodes.some((node) => node.id === clipboardNodeId)
   const nodes: EditorCanvasNode[] = graph.nodes.map((node) => {
     const definition = props.registry.getNodeDefinition(node.type)
+    const referencedSubgraph =
+      node.type === 'subgraph.instance' &&
+      typeof node.params.subgraphGraphId === 'string' &&
+      node.params.subgraphGraphId.length > 0
+        ? getSubgraphDefinition(project, node.params.subgraphGraphId)
+        : undefined
+    const inputs =
+      node.type === 'subgraph.instance'
+        ? [
+            ...(definition?.inputs ?? []),
+            ...getPublicParamInputPorts(referencedSubgraph?.publicParamsSchema ?? {}),
+          ]
+        : definition?.inputs ?? []
+    const slotNames =
+      node.type === 'subgraph.instance'
+        ? referencedSubgraph?.publicSlots ?? ['children']
+        : definition?.slots?.length
+          ? definition.slots
+          : ['children']
 
     return {
       id: node.id,
@@ -100,8 +123,9 @@ export function EditorCanvas(props: EditorCanvasProps): JSX.Element {
         title: getNodeTitle(project, node, props.registry),
         type: node.type,
         params: node.params,
-        inputs: definition?.inputs ?? [],
+        inputs,
         outputs: definition?.outputs ?? [],
+        slotNames,
         invalid: invalidMessagesByNodeId.has(node.id),
         invalidMessages: invalidMessagesByNodeId.get(node.id) ?? [],
         hasClipboard: clipboardExistsInGraph,
@@ -291,9 +315,24 @@ const CanvasNode = memo(function CanvasNode(
           ))}
         </div>
         <div className="canvas-node-ports right">
-          {props.data.outputs.map((port) => (
-            <PortRow key={`output-${port.key}`} port={port} direction="output" />
-          ))}
+          {props.data.outputs.flatMap((port) => {
+            const kind = getPortEdgeKind(port, 'output')
+
+            if (kind !== 'structure') {
+              return [
+                <PortRow key={`output-${port.key}`} port={port} direction="output" />,
+              ]
+            }
+
+            return props.data.slotNames.map((slotName) => (
+              <PortRow
+                key={`output-${port.key}-${slotName}`}
+                port={port}
+                direction="output"
+                slotName={slotName}
+              />
+            ))
+          })}
         </div>
       </div>
       <div className="canvas-node-footer">{summarizeParams(props.data.params)}</div>
@@ -344,13 +383,16 @@ const CanvasNode = memo(function CanvasNode(
 function PortRow(props: {
   port: PortDefinition
   direction: 'input' | 'output'
+  slotName?: string
 }): JSX.Element {
   const kind = getPortEdgeKind(props.port, props.direction)
+  const slotName = kind === 'structure' && props.direction === 'output' ? props.slotName : undefined
+  const label = slotName ?? props.port.key
 
   return (
     <div className={`canvas-port-row ${props.direction}`}>
       <Handle
-        id={buildHandleId(kind, props.port.key)}
+        id={buildHandleId(kind, props.port.key, slotName)}
         type={props.direction === 'input' ? 'target' : 'source'}
         position={props.direction === 'input' ? Position.Left : Position.Right}
         style={{
@@ -361,7 +403,7 @@ function PortRow(props: {
         }}
       />
       <span>
-        {props.port.key}
+        {label}
         <small>{props.port.valueType}</small>
       </span>
     </div>
@@ -382,6 +424,7 @@ function handleConnect(connection: Connection, store: EditorStore): void {
     toNodeId: connection.target,
     toPort: target.port,
     kind: source.kind,
+    ...(source.kind === 'structure' && source.slot ? { slot: source.slot } : {}),
   })
 }
 
@@ -498,4 +541,27 @@ function parseNodeTemplate(value: string): {
   } catch {
     return undefined
   }
+}
+
+function getPublicParamInputPorts(schema: PortableParamSchema): PortDefinition[] {
+  return Object.entries(schema).map(([key, field]) => ({
+    key,
+    valueType: getValueTypeForPortableField(field),
+  }))
+}
+
+function getValueTypeForPortableField(field: PortableParamSchemaField): ValueType {
+  if (field.type === 'string' || field.type === 'enum') {
+    return 'string'
+  }
+
+  if (field.type === 'number') {
+    return 'number'
+  }
+
+  if (field.type === 'boolean') {
+    return 'boolean'
+  }
+
+  return 'unknown'
 }

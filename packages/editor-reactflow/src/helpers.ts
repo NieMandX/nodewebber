@@ -45,7 +45,7 @@ export function toReactFlowEdges(graph: GraphDocument): Edge[] {
     id: edge.id,
     source: edge.from.nodeId,
     target: edge.to.nodeId,
-    sourceHandle: buildHandleId(edge.kind, edge.from.port),
+    sourceHandle: buildHandleId(edge.kind, edge.from.port, edge.slot),
     targetHandle: buildHandleId(edge.kind, edge.to.port),
     type: 'smoothstep',
     animated: edge.kind === 'style',
@@ -56,19 +56,23 @@ export function toReactFlowEdges(graph: GraphDocument): Edge[] {
   }))
 }
 
-export function buildHandleId(kind: EdgeKind, port: string): string {
-  return `${kind}:${port}`
+export function buildHandleId(
+  kind: EdgeKind,
+  port: string,
+  slot?: string,
+): string {
+  return slot ? `${kind}:${port}:${slot}` : `${kind}:${port}`
 }
 
 export function parseHandleId(
   handleId: string | null | undefined,
-): { kind: EdgeKind; port: string } | undefined {
+): { kind: EdgeKind; port: string; slot?: string } | undefined {
   if (!handleId) {
     return undefined
   }
 
-  const [kind, ...rest] = handleId.split(':')
-  const port = rest.join(':')
+  const [kind, port, ...slotParts] = handleId.split(':')
+  const slot = slotParts.join(':')
 
   if (!kind || !port || !isEdgeKind(kind)) {
     return undefined
@@ -77,6 +81,7 @@ export function parseHandleId(
   return {
     kind,
     port,
+    ...(slot ? { slot } : {}),
   }
 }
 

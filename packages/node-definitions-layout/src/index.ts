@@ -13,6 +13,11 @@ const uiOutput = {
   valueType: 'ui-node' as const,
 }
 
+const pageSlots = ['children'] as const
+const sectionSlots = ['children'] as const
+const stackSlots = ['children'] as const
+const shellSlots = ['children', 'header', 'body', 'footer'] as const
+
 const pageParamsSchema = z.object({
   maxWidth: z.union([z.number(), z.string()]),
   padding: z.union([z.number(), z.string()]),
@@ -27,6 +32,12 @@ const stackParamsSchema = z.object({
   direction: z.enum(['row', 'column']),
   gap: z.union([z.number(), z.string()]),
   align: z.enum(['start', 'center', 'end', 'stretch']),
+}).passthrough()
+
+const shellParamsSchema = z.object({
+  padding: z.union([z.number(), z.string()]),
+  gap: z.union([z.number(), z.string()]),
+  background: z.string(),
 }).passthrough()
 
 const pageDefaultParams = {
@@ -49,11 +60,18 @@ const stackDefaultParams: {
   align: 'stretch',
 }
 
+const shellDefaultParams = {
+  padding: 24,
+  gap: 20,
+  background: 'rgba(255,255,255,0.42)',
+}
+
 export const pageNodeDefinition: NodeDefinition = {
   type: 'layout.page',
   version: 1,
   title: 'Page',
   category: 'Layout',
+  slots: [...pageSlots],
   inputs: [
     {
       key: 'theme',
@@ -98,6 +116,7 @@ export const sectionNodeDefinition: NodeDefinition = {
   version: 1,
   title: 'Section',
   category: 'Layout',
+  slots: [...sectionSlots],
   inputs: [layoutParentInput],
   outputs: [uiOutput],
   defaultParams: sectionDefaultParams,
@@ -129,6 +148,7 @@ export const stackNodeDefinition: NodeDefinition = {
   version: 1,
   title: 'Stack',
   category: 'Layout',
+  slots: [...stackSlots],
   inputs: [layoutParentInput],
   outputs: [uiOutput],
   defaultParams: stackDefaultParams,
@@ -157,10 +177,45 @@ export const stackNodeDefinition: NodeDefinition = {
   },
 }
 
+export const shellNodeDefinition: NodeDefinition = {
+  type: 'layout.shell',
+  version: 1,
+  title: 'Shell',
+  category: 'Layout',
+  slots: [...shellSlots],
+  inputs: [layoutParentInput],
+  outputs: [uiOutput],
+  defaultParams: shellDefaultParams,
+  paramsSchema: shellParamsSchema,
+  evaluate: (node) => {
+    const params = shellParamsSchema.safeParse(node.params).success
+      ? shellParamsSchema.parse(node.params)
+      : shellDefaultParams
+
+    return {
+      outputs: {
+        ui: {
+          id: node.id,
+          kind: 'Shell',
+          props: {},
+          children: [],
+          styles: {
+            display: 'grid',
+            gap: formatCssUnit(params.gap, '20px'),
+            padding: formatCssUnit(params.padding, '24px'),
+            background: params.background,
+          },
+        } satisfies UiNode,
+      },
+    }
+  },
+}
+
 export const layoutNodeDefinitions: NodeDefinition[] = [
   pageNodeDefinition,
   sectionNodeDefinition,
   stackNodeDefinition,
+  shellNodeDefinition,
 ]
 
 function normalizeAlign(value: 'start' | 'center' | 'end' | 'stretch'): string {

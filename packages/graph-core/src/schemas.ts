@@ -21,6 +21,7 @@ export const portableParamSchemaFieldSchema = z.object({
 export const graphSubgraphMetadataSchema = z.object({
   publicParamsSchema: z.record(portableParamSchemaFieldSchema).optional(),
   publicDefaultParams: z.record(z.unknown()).optional(),
+  publicSlots: z.array(z.string().min(1)).optional(),
 })
 
 export const positionSchema = z.object({
@@ -54,6 +55,7 @@ export const edgeInstanceSchema = z.object({
   to: edgeEndpointSchema,
   kind: z.enum(['data', 'structure', 'style', 'event']),
   order: z.number().optional(),
+  slot: z.string().min(1).optional(),
 })
 
 export const graphDocumentSchema = z.object({

@@ -28,7 +28,7 @@ export function renderUiTree(node: UiNode): ReactNode {
 
 function renderUiNode(node: UiNode): ReactNode {
   if (node.kind === 'Fragment') {
-    return <>{node.children.map((child) => renderUiNode(child))}</>
+    return <>{renderChildren(node.children)}</>
   }
 
   if (node.kind === 'Page') {
@@ -59,7 +59,7 @@ function renderUiNode(node: UiNode): ReactNode {
             gap: '24px',
           }}
         >
-          {node.children.map((child) => renderUiNode(child))}
+          {renderChildren(node.children)}
         </div>
       </div>
     )
@@ -68,7 +68,7 @@ function renderUiNode(node: UiNode): ReactNode {
   if (node.kind === 'Section') {
     return (
       <section key={node.id} style={sectionStyle(node)}>
-        {node.children.map((child) => renderUiNode(child))}
+        {renderChildren(node.children)}
       </section>
     )
   }
@@ -76,7 +76,32 @@ function renderUiNode(node: UiNode): ReactNode {
   if (node.kind === 'Stack') {
     return (
       <div key={node.id} style={stackStyle(node)}>
-        {node.children.map((child) => renderUiNode(child))}
+        {renderChildren(node.children)}
+      </div>
+    )
+  }
+
+  if (node.kind === 'Shell') {
+    const headerChildren = node.slots?.header ?? []
+    const bodyChildren = [...(node.slots?.body ?? []), ...node.children]
+    const footerChildren = node.slots?.footer ?? []
+
+    return (
+      <div
+        key={node.id}
+        style={{
+          ...toCssProperties(node.styles),
+          display: 'grid',
+          gap: '20px',
+        }}
+      >
+        {headerChildren.length > 0 ? (
+          <header>{renderChildren(headerChildren)}</header>
+        ) : null}
+        <main>{renderChildren(bodyChildren)}</main>
+        {footerChildren.length > 0 ? (
+          <footer>{renderChildren(footerChildren)}</footer>
+        ) : null}
       </div>
     )
   }
@@ -154,9 +179,13 @@ function renderUiNode(node: UiNode): ReactNode {
 
   return (
     <div key={node.id} style={toCssProperties(node.styles)}>
-      {node.children.map((child) => renderUiNode(child))}
+      {renderChildren(node.children)}
     </div>
   )
+}
+
+function renderChildren(children: UiNode[]): ReactNode[] {
+  return children.map((child) => renderUiNode(child))
 }
 
 function sectionStyle(node: UiNode): CSSProperties {

@@ -23,6 +23,7 @@ export interface ConnectNodesInput {
   toNodeId: string
   toPort: string
   kind: EdgeInstance['kind']
+  slot?: string
 }
 
 export interface AddNodeInitialState {
@@ -304,6 +305,7 @@ export function createEditorStore(options: {
               port: connection.toPort,
             },
             kind: connection.kind,
+            ...(connection.slot ? { slot: connection.slot } : {}),
           })
         })
 

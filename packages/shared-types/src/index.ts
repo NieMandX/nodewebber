@@ -24,6 +24,7 @@ export type PortableParamSchema = Record<string, PortableParamSchemaField>
 export interface GraphSubgraphMetadata {
   publicParamsSchema?: PortableParamSchema
   publicDefaultParams?: Record<string, unknown>
+  publicSlots?: string[]
 }
 
 export interface SubgraphDefinition {
@@ -31,6 +32,7 @@ export interface SubgraphDefinition {
   title: string
   publicParamsSchema: PortableParamSchema
   publicDefaultParams: Record<string, unknown>
+  publicSlots: string[]
 }
 
 export interface ProjectDocument {
@@ -91,6 +93,7 @@ export interface EdgeInstance {
   }
   kind: EdgeKind
   order?: number
+  slot?: string
 }
 
 export interface AssetReference {
@@ -168,6 +171,7 @@ export interface NodeDefinition {
   version: number
   title: string
   category: string
+  slots?: string[]
   inputs: PortDefinition[]
   outputs: PortDefinition[]
   defaultParams: Record<string, unknown>

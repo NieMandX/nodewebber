@@ -1,0 +1,466 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_data_card_list",
+    "name": "Data Card List",
+    "createdAt": "2026-03-09T15:20:00.000Z",
+    "updatedAt": "2026-03-09T15:20:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_data_cards_page",
+    "themeMode": "light"
+  },
+  "graphs": [
+    {
+      "id": "graph_data_cards_page",
+      "name": "Data Card List Demo",
+      "kind": "page",
+      "viewport": {
+        "x": -200,
+        "y": -120,
+        "zoom": 0.68
+      },
+      "nodes": [
+        {
+          "id": "node_data_theme",
+          "type": "style.theme",
+          "version": 1,
+          "label": "Theme",
+          "position": { "x": 80, "y": 80 },
+          "params": {
+            "colors": {
+              "background": "#f5efe7",
+              "surface": "#fff9f2",
+              "text": "#1e1712",
+              "accent": "#b96539"
+            },
+            "typography": {
+              "fontFamily": "\"Space Grotesk\", \"IBM Plex Sans\", sans-serif",
+              "headingScale": 1.16,
+              "bodySize": "1rem"
+            }
+          }
+        },
+        {
+          "id": "node_data_page",
+          "type": "layout.page",
+          "version": 1,
+          "label": "Page",
+          "position": { "x": 340, "y": 120 },
+          "params": {
+            "maxWidth": 1120,
+            "padding": 36
+          }
+        },
+        {
+          "id": "node_data_section",
+          "type": "layout.section",
+          "version": 1,
+          "label": "Section",
+          "position": { "x": 620, "y": 120 },
+          "params": {
+            "paddingY": 32,
+            "background": "transparent"
+          }
+        },
+        {
+          "id": "node_data_stack",
+          "type": "layout.stack",
+          "version": 1,
+          "label": "Content Stack",
+          "position": { "x": 900, "y": 120 },
+          "params": {
+            "direction": "column",
+            "gap": 18,
+            "align": "stretch"
+          }
+        },
+        {
+          "id": "node_data_title",
+          "type": "content.heading",
+          "version": 1,
+          "label": "Heading",
+          "position": { "x": 1220, "y": -20 },
+          "params": {
+            "text": "Fallback heading",
+            "level": 1,
+            "align": "left"
+          }
+        },
+        {
+          "id": "node_data_intro",
+          "type": "content.text",
+          "version": 1,
+          "label": "Intro",
+          "position": { "x": 1220, "y": 160 },
+          "params": {
+            "text": "Fallback intro"
+          }
+        },
+        {
+          "id": "node_data_repeat",
+          "type": "data.repeat",
+          "version": 1,
+          "label": "Repeat Cards",
+          "position": { "x": 1220, "y": 340 },
+          "params": {
+            "itemSubgraphGraphId": "graph_component_data_card_item"
+          }
+        },
+        {
+          "id": "node_data_heading_value",
+          "type": "data.value",
+          "version": 1,
+          "label": "Heading Value",
+          "position": { "x": 1020, "y": -180 },
+          "params": {
+            "value": "Data-driven cards"
+          }
+        },
+        {
+          "id": "node_data_intro_object",
+          "type": "data.object",
+          "version": 1,
+          "label": "Intro Object",
+          "position": { "x": 980, "y": 540 },
+          "params": {
+            "value": {
+              "body": "Array, object, condition, get, and repeat nodes can feed content and reusable subgraphs through the same evaluation pipeline."
+            }
+          }
+        },
+        {
+          "id": "node_data_intro_get",
+          "type": "data.get",
+          "version": 1,
+          "label": "Intro Body",
+          "position": { "x": 1220, "y": 560 },
+          "params": {
+            "key": "body"
+          }
+        },
+        {
+          "id": "node_data_cards",
+          "type": "data.array",
+          "version": 1,
+          "label": "Cards Array",
+          "position": { "x": 980, "y": 760 },
+          "params": {
+            "value": [
+              {
+                "title": "Reusable sections",
+                "cta": "Open section",
+                "href": "#section",
+                "featured": true
+              },
+              {
+                "title": "Conditional copy",
+                "cta": "Inspect logic",
+                "href": "#condition",
+                "featured": false
+              },
+              {
+                "title": "Repeat through subgraphs",
+                "cta": "Preview cards",
+                "href": "#repeat",
+                "featured": false
+              }
+            ]
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_data_theme_page",
+          "from": { "nodeId": "node_data_theme", "port": "theme" },
+          "to": { "nodeId": "node_data_page", "port": "theme" },
+          "kind": "style"
+        },
+        {
+          "id": "edge_data_page_section",
+          "from": { "nodeId": "node_data_page", "port": "ui" },
+          "to": { "nodeId": "node_data_section", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_data_section_stack",
+          "from": { "nodeId": "node_data_section", "port": "ui" },
+          "to": { "nodeId": "node_data_stack", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_data_stack_heading",
+          "from": { "nodeId": "node_data_stack", "port": "ui" },
+          "to": { "nodeId": "node_data_title", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_data_stack_intro",
+          "from": { "nodeId": "node_data_stack", "port": "ui" },
+          "to": { "nodeId": "node_data_intro", "port": "parent" },
+          "kind": "structure",
+          "order": 1
+        },
+        {
+          "id": "edge_data_stack_repeat",
+          "from": { "nodeId": "node_data_stack", "port": "ui" },
+          "to": { "nodeId": "node_data_repeat", "port": "parent" },
+          "kind": "structure",
+          "order": 2
+        },
+        {
+          "id": "edge_data_heading_value",
+          "from": { "nodeId": "node_data_heading_value", "port": "value" },
+          "to": { "nodeId": "node_data_title", "port": "text" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_data_intro_object_get",
+          "from": { "nodeId": "node_data_intro_object", "port": "value" },
+          "to": { "nodeId": "node_data_intro_get", "port": "object" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_data_intro_get_text",
+          "from": { "nodeId": "node_data_intro_get", "port": "value" },
+          "to": { "nodeId": "node_data_intro", "port": "text" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_data_cards_repeat",
+          "from": { "nodeId": "node_data_cards", "port": "value" },
+          "to": { "nodeId": "node_data_repeat", "port": "items" },
+          "kind": "data"
+        }
+      ]
+    },
+    {
+      "id": "graph_component_data_card_item",
+      "name": "Data Card Item",
+      "kind": "subgraph",
+      "subgraph": {
+        "publicParamsSchema": {
+          "item": { "type": "json" }
+        },
+        "publicDefaultParams": {
+          "item": {}
+        }
+      },
+      "viewport": {
+        "x": 0,
+        "y": 0,
+        "zoom": 0.84
+      },
+      "nodes": [
+        {
+          "id": "node_card_item_section",
+          "type": "layout.section",
+          "version": 1,
+          "label": "Card Section",
+          "position": { "x": 520, "y": 160 },
+          "params": {
+            "paddingY": 18,
+            "background": "rgba(255,255,255,0.6)"
+          }
+        },
+        {
+          "id": "node_card_item_stack",
+          "type": "layout.stack",
+          "version": 1,
+          "label": "Card Stack",
+          "position": { "x": 860, "y": 160 },
+          "params": {
+            "direction": "column",
+            "gap": 10,
+            "align": "stretch"
+          }
+        },
+        {
+          "id": "node_card_item_heading",
+          "type": "content.heading",
+          "version": 1,
+          "label": "Card Heading",
+          "position": { "x": 1180, "y": 20 },
+          "params": {
+            "text": "Fallback title",
+            "level": 3,
+            "align": "left"
+          }
+        },
+        {
+          "id": "node_card_item_text",
+          "type": "content.text",
+          "version": 1,
+          "label": "Card Copy",
+          "position": { "x": 1180, "y": 200 },
+          "params": {
+            "text": "Fallback card copy"
+          }
+        },
+        {
+          "id": "node_card_item_button",
+          "type": "content.button",
+          "version": 1,
+          "label": "Card CTA",
+          "position": { "x": 1180, "y": 380 },
+          "params": {
+            "label": "Fallback CTA",
+            "href": "#",
+            "variant": "solid"
+          }
+        },
+        {
+          "id": "node_card_param_item",
+          "type": "subgraph.param",
+          "version": 1,
+          "label": "item",
+          "position": { "x": 140, "y": 120 },
+          "params": {
+            "key": "item",
+            "fallbackValue": {}
+          }
+        },
+        {
+          "id": "node_card_get_title",
+          "type": "data.get",
+          "version": 1,
+          "label": "Get Title",
+          "position": { "x": 420, "y": -20 },
+          "params": {
+            "key": "title"
+          }
+        },
+        {
+          "id": "node_card_get_cta",
+          "type": "data.get",
+          "version": 1,
+          "label": "Get CTA",
+          "position": { "x": 420, "y": 220 },
+          "params": {
+            "key": "cta"
+          }
+        },
+        {
+          "id": "node_card_get_href",
+          "type": "data.get",
+          "version": 1,
+          "label": "Get Href",
+          "position": { "x": 420, "y": 420 },
+          "params": {
+            "key": "href"
+          }
+        },
+        {
+          "id": "node_card_get_featured",
+          "type": "data.get",
+          "version": 1,
+          "label": "Get Featured",
+          "position": { "x": 420, "y": 620 },
+          "params": {
+            "key": "featured"
+          }
+        },
+        {
+          "id": "node_card_featured_copy",
+          "type": "data.condition",
+          "version": 1,
+          "label": "Featured Copy",
+          "position": { "x": 760, "y": 620 },
+          "params": {
+            "condition": false,
+            "whenTrue": "Featured workflow card",
+            "whenFalse": "Reusable data item card"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_card_item_section_stack",
+          "from": { "nodeId": "node_card_item_section", "port": "ui" },
+          "to": { "nodeId": "node_card_item_stack", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_card_item_stack_heading",
+          "from": { "nodeId": "node_card_item_stack", "port": "ui" },
+          "to": { "nodeId": "node_card_item_heading", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_card_item_stack_text",
+          "from": { "nodeId": "node_card_item_stack", "port": "ui" },
+          "to": { "nodeId": "node_card_item_text", "port": "parent" },
+          "kind": "structure",
+          "order": 1
+        },
+        {
+          "id": "edge_card_item_stack_button",
+          "from": { "nodeId": "node_card_item_stack", "port": "ui" },
+          "to": { "nodeId": "node_card_item_button", "port": "parent" },
+          "kind": "structure",
+          "order": 2
+        },
+        {
+          "id": "edge_card_item_param_title_object",
+          "from": { "nodeId": "node_card_param_item", "port": "value" },
+          "to": { "nodeId": "node_card_get_title", "port": "object" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_card_item_param_cta_object",
+          "from": { "nodeId": "node_card_param_item", "port": "value" },
+          "to": { "nodeId": "node_card_get_cta", "port": "object" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_card_item_param_href_object",
+          "from": { "nodeId": "node_card_param_item", "port": "value" },
+          "to": { "nodeId": "node_card_get_href", "port": "object" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_card_item_param_featured_object",
+          "from": { "nodeId": "node_card_param_item", "port": "value" },
+          "to": { "nodeId": "node_card_get_featured", "port": "object" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_card_item_title_heading",
+          "from": { "nodeId": "node_card_get_title", "port": "value" },
+          "to": { "nodeId": "node_card_item_heading", "port": "text" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_card_item_cta_button",
+          "from": { "nodeId": "node_card_get_cta", "port": "value" },
+          "to": { "nodeId": "node_card_item_button", "port": "label" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_card_item_href_button",
+          "from": { "nodeId": "node_card_get_href", "port": "value" },
+          "to": { "nodeId": "node_card_item_button", "port": "href" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_card_item_featured_condition",
+          "from": { "nodeId": "node_card_get_featured", "port": "value" },
+          "to": { "nodeId": "node_card_featured_copy", "port": "condition" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_card_item_condition_text",
+          "from": { "nodeId": "node_card_featured_copy", "port": "value" },
+          "to": { "nodeId": "node_card_item_text", "port": "text" },
+          "kind": "data"
+        }
+      ]
+    }
+  ],
+  "assets": []
+}

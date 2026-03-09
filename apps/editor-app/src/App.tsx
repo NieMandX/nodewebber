@@ -105,7 +105,7 @@ export function App(): JSX.Element {
       <aside className="palette-panel panel surface-strong">
         <div className="panel-header">
           <h2>Node Palette</h2>
-          <p>Add layout, content, theme, and reusable component nodes to the active graph.</p>
+          <p>Add layout, content, data, theme, and reusable component nodes to the active graph.</p>
         </div>
         <NodePalette store={editorStore} registry={registry} />
       </aside>

@@ -24,6 +24,7 @@
       "@procedural-web-composer/graph-engine": ["packages/graph-engine/src/index.ts"],
       "@procedural-web-composer/node-definitions-layout": ["packages/node-definitions-layout/src/index.ts"],
       "@procedural-web-composer/node-definitions-basic": ["packages/node-definitions-basic/src/index.ts"],
+      "@procedural-web-composer/node-definitions-data": ["packages/node-definitions-data/src/index.ts"],
       "@procedural-web-composer/node-definitions-style": ["packages/node-definitions-style/src/index.ts"],
       "@procedural-web-composer/node-definitions-subgraph": ["packages/node-definitions-subgraph/src/index.ts"],
       "@procedural-web-composer/runtime-core": ["packages/runtime-core/src/index.ts"],

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { UiNode } from '@procedural-web-composer/ui-tree'
 import type { NodeDefinition } from '@procedural-web-composer/shared-types'
 
 const parentInput = {
@@ -25,11 +26,17 @@ const subgraphParamParamsSchema = z.object({
   fallbackValue: z.unknown().optional(),
 }).passthrough()
 
+const subgraphSlotParamsSchema = z.object({
+  name: z.string().min(1),
+  fallbackMode: z.enum(['empty', 'children']).optional(),
+}).passthrough()
+
 export const subgraphInstanceNodeDefinition: NodeDefinition = {
   type: 'subgraph.instance',
   version: 1,
   title: 'Component Instance',
   category: 'Subgraph',
+  slots: ['children'],
   inputs: [parentInput],
   outputs: [uiOutput],
   defaultParams: {
@@ -82,7 +89,46 @@ export const subgraphParamNodeDefinition: NodeDefinition = {
   },
 }
 
+export const subgraphSlotNodeDefinition: NodeDefinition = {
+  type: 'subgraph.slot',
+  version: 1,
+  title: 'Slot Placeholder',
+  category: 'Subgraph',
+  inputs: [parentInput],
+  outputs: [uiOutput],
+  defaultParams: {
+    name: 'children',
+    fallbackMode: 'empty',
+  },
+  paramsSchema: subgraphSlotParamsSchema,
+  evaluate: (node) => {
+    const params = subgraphSlotParamsSchema.safeParse(node.params).success
+      ? subgraphSlotParamsSchema.parse(node.params)
+      : {
+          name: 'children',
+          fallbackMode: 'empty' as const,
+        }
+    const slotChildren = Array.isArray(node.params.__resolvedSlotChildren)
+      ? (node.params.__resolvedSlotChildren as UiNode[])
+      : []
+
+    return {
+      outputs: {
+        ui: {
+          id: node.id,
+          kind: 'Fragment',
+          props: {
+            slotName: params.name,
+          },
+          children: slotChildren,
+        } satisfies UiNode,
+      },
+    }
+  },
+}
+
 export const subgraphNodeDefinitions: NodeDefinition[] = [
   subgraphInstanceNodeDefinition,
   subgraphParamNodeDefinition,
+  subgraphSlotNodeDefinition,
 ]

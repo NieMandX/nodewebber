@@ -19,6 +19,7 @@ export {
   getSubgraphDefinitions,
   isReusableGraph,
   matchesPortableParamField,
+  resolvePublicSlots,
   validatePortableParamDefaults,
 } from './subgraphs'
 export { validateEdges, validateGraph, validateNodes } from './validation'
