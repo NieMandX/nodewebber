@@ -1,0 +1,199 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_viewer_events_in_subgraph",
+    "name": "Viewer Events In Subgraph",
+    "createdAt": "2026-03-09T20:15:00.000Z",
+    "updatedAt": "2026-03-09T20:15:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_viewer_events_page",
+    "themeMode": "light"
+  },
+  "graphs": [
+    {
+      "id": "graph_viewer_events_page",
+      "name": "Viewer Events Page",
+      "kind": "page",
+      "nodes": [
+        {
+          "id": "node_subgraph_page",
+          "type": "layout.page",
+          "version": 1,
+          "position": { "x": 40, "y": 80 },
+          "params": { "maxWidth": 1040, "padding": 32 }
+        },
+        {
+          "id": "node_subgraph_instance",
+          "type": "subgraph.instance",
+          "version": 1,
+          "position": { "x": 300, "y": 80 },
+          "params": {
+            "subgraphGraphId": "graph_viewer_events_panel"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_subgraph_page_instance",
+          "from": { "nodeId": "node_subgraph_page", "port": "ui" },
+          "to": { "nodeId": "node_subgraph_instance", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "graph_viewer_events_panel",
+      "name": "Viewer Events Panel",
+      "kind": "subgraph",
+      "subgraph": {
+        "publicParamsSchema": {},
+        "publicDefaultParams": {},
+        "publicSlots": ["children"]
+      },
+      "nodes": [
+        {
+          "id": "node_subgraph_panel_section",
+          "type": "layout.section",
+          "version": 1,
+          "position": { "x": 40, "y": 80 },
+          "params": {
+            "paddingY": 20,
+            "background": "#ffffff"
+          }
+        },
+        {
+          "id": "node_subgraph_panel_stack",
+          "type": "layout.stack",
+          "version": 1,
+          "position": { "x": 280, "y": 80 },
+          "params": {
+            "direction": "column",
+            "gap": 20,
+            "align": "stretch"
+          }
+        },
+        {
+          "id": "node_subgraph_panel_button",
+          "type": "content.button",
+          "version": 1,
+          "position": { "x": 540, "y": 40 },
+          "params": {
+            "label": "Show Detail",
+            "href": "#",
+            "variant": "solid"
+          }
+        },
+        {
+          "id": "node_subgraph_panel_viewer",
+          "type": "viewer.block",
+          "version": 1,
+          "position": { "x": 540, "y": 220 },
+          "params": {
+            "title": "Subgraph Viewer",
+            "modelSrc": "/models/table.glb",
+            "initialStateId": "default",
+            "interactionsEnabled": true
+          }
+        },
+        {
+          "id": "node_subgraph_panel_state_default",
+          "type": "viewer.state",
+          "version": 1,
+          "position": { "x": 540, "y": 460 },
+          "params": {
+            "id": "default",
+            "label": "Overview"
+          }
+        },
+        {
+          "id": "node_subgraph_panel_state_detail",
+          "type": "viewer.state",
+          "version": 1,
+          "position": { "x": 540, "y": 620 },
+          "params": {
+            "id": "detail",
+            "label": "Detail",
+            "titleOverride": "Subgraph Detail"
+          }
+        },
+        {
+          "id": "node_subgraph_panel_states",
+          "type": "viewer.states",
+          "version": 1,
+          "position": { "x": 820, "y": 540 },
+          "params": {}
+        },
+        {
+          "id": "node_subgraph_panel_click",
+          "type": "ui.onClick",
+          "version": 1,
+          "position": { "x": 820, "y": 40 },
+          "params": {
+            "targetNodeId": "node_subgraph_panel_button",
+            "eventName": "subgraph.viewer.detail"
+          }
+        },
+        {
+          "id": "node_subgraph_panel_reaction",
+          "type": "events.setViewerState",
+          "version": 1,
+          "position": { "x": 1080, "y": 40 },
+          "params": {
+            "viewerBlockNodeId": "node_subgraph_panel_viewer",
+            "stateId": "detail"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_subgraph_section_stack",
+          "from": { "nodeId": "node_subgraph_panel_section", "port": "ui" },
+          "to": { "nodeId": "node_subgraph_panel_stack", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_subgraph_stack_button",
+          "from": { "nodeId": "node_subgraph_panel_stack", "port": "ui" },
+          "to": { "nodeId": "node_subgraph_panel_button", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_subgraph_stack_viewer",
+          "from": { "nodeId": "node_subgraph_panel_stack", "port": "ui" },
+          "to": { "nodeId": "node_subgraph_panel_viewer", "port": "parent" },
+          "kind": "structure",
+          "order": 1
+        },
+        {
+          "id": "edge_subgraph_state_default",
+          "from": { "nodeId": "node_subgraph_panel_state_default", "port": "sceneState" },
+          "to": { "nodeId": "node_subgraph_panel_states", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_subgraph_state_detail",
+          "from": { "nodeId": "node_subgraph_panel_state_detail", "port": "sceneState" },
+          "to": { "nodeId": "node_subgraph_panel_states", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_subgraph_states_viewer",
+          "from": { "nodeId": "node_subgraph_panel_states", "port": "states" },
+          "to": { "nodeId": "node_subgraph_panel_viewer", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_subgraph_click_reaction",
+          "from": { "nodeId": "node_subgraph_panel_click", "port": "event" },
+          "to": { "nodeId": "node_subgraph_panel_reaction", "port": "trigger" },
+          "kind": "event"
+        }
+      ]
+    }
+  ],
+  "assets": []
+}

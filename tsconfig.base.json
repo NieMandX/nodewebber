@@ -25,6 +25,7 @@
       "@procedural-web-composer/node-definitions-layout": ["packages/node-definitions-layout/src/index.ts"],
       "@procedural-web-composer/node-definitions-basic": ["packages/node-definitions-basic/src/index.ts"],
       "@procedural-web-composer/node-definitions-data": ["packages/node-definitions-data/src/index.ts"],
+      "@procedural-web-composer/node-definitions-events": ["packages/node-definitions-events/src/index.ts"],
       "@procedural-web-composer/node-definitions-viewer": ["packages/node-definitions-viewer/src/index.ts"],
       "@procedural-web-composer/node-definitions-style": ["packages/node-definitions-style/src/index.ts"],
       "@procedural-web-composer/node-definitions-subgraph": ["packages/node-definitions-subgraph/src/index.ts"],

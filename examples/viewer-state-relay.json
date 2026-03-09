@@ -1,0 +1,198 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_viewer_state_relay",
+    "name": "Viewer State Relay",
+    "createdAt": "2026-03-09T20:10:00.000Z",
+    "updatedAt": "2026-03-09T20:10:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_viewer_state_relay",
+    "themeMode": "dark"
+  },
+  "graphs": [
+    {
+      "id": "graph_viewer_state_relay",
+      "name": "Viewer State Relay",
+      "kind": "page",
+      "nodes": [
+        {
+          "id": "node_relay_page",
+          "type": "layout.page",
+          "version": 1,
+          "position": { "x": 40, "y": 80 },
+          "params": { "maxWidth": 1040, "padding": 32 }
+        },
+        {
+          "id": "node_relay_stack",
+          "type": "layout.stack",
+          "version": 1,
+          "position": { "x": 280, "y": 80 },
+          "params": { "direction": "column", "gap": 20, "align": "stretch" }
+        },
+        {
+          "id": "node_relay_button",
+          "type": "content.button",
+          "version": 1,
+          "position": { "x": 540, "y": 40 },
+          "params": {
+            "label": "Switch To Detail",
+            "href": "#",
+            "variant": "ghost"
+          }
+        },
+        {
+          "id": "node_relay_viewer",
+          "type": "viewer.block",
+          "version": 1,
+          "position": { "x": 540, "y": 220 },
+          "params": {
+            "title": "Relay Viewer",
+            "modelSrc": "/models/lamp.glb",
+            "initialStateId": "default",
+            "interactionsEnabled": true
+          }
+        },
+        {
+          "id": "node_relay_state_default",
+          "type": "viewer.state",
+          "version": 1,
+          "position": { "x": 540, "y": 460 },
+          "params": {
+            "id": "default",
+            "label": "Default"
+          }
+        },
+        {
+          "id": "node_relay_state_detail",
+          "type": "viewer.state",
+          "version": 1,
+          "position": { "x": 540, "y": 620 },
+          "params": {
+            "id": "detail",
+            "label": "Detail"
+          }
+        },
+        {
+          "id": "node_relay_states",
+          "type": "viewer.states",
+          "version": 1,
+          "position": { "x": 820, "y": 540 },
+          "params": {}
+        },
+        {
+          "id": "node_relay_click",
+          "type": "ui.onClick",
+          "version": 1,
+          "position": { "x": 820, "y": 40 },
+          "params": {
+            "targetNodeId": "node_relay_button",
+            "eventName": "relay.trigger"
+          }
+        },
+        {
+          "id": "node_relay_state_change",
+          "type": "viewer.onStateChange",
+          "version": 1,
+          "position": { "x": 820, "y": 220 },
+          "params": {
+            "viewerBlockNodeId": "node_relay_viewer",
+            "stateId": "detail",
+            "eventName": "viewer.state.detail"
+          }
+        },
+        {
+          "id": "node_relay_set_state",
+          "type": "events.setViewerState",
+          "version": 1,
+          "position": { "x": 1080, "y": 40 },
+          "params": {
+            "viewerBlockNodeId": "node_relay_viewer",
+            "stateId": "detail"
+          }
+        },
+        {
+          "id": "node_relay_emit",
+          "type": "events.emit",
+          "version": 1,
+          "position": { "x": 1080, "y": 220 },
+          "params": {
+            "eventName": "viewer.detail.relay",
+            "payload": {
+              "stage": "detail"
+            }
+          }
+        },
+        {
+          "id": "node_relay_log",
+          "type": "events.log",
+          "version": 1,
+          "position": { "x": 1340, "y": 220 },
+          "params": {
+            "label": "viewer-relay"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_relay_page_stack",
+          "from": { "nodeId": "node_relay_page", "port": "ui" },
+          "to": { "nodeId": "node_relay_stack", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_relay_stack_button",
+          "from": { "nodeId": "node_relay_stack", "port": "ui" },
+          "to": { "nodeId": "node_relay_button", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_relay_stack_viewer",
+          "from": { "nodeId": "node_relay_stack", "port": "ui" },
+          "to": { "nodeId": "node_relay_viewer", "port": "parent" },
+          "kind": "structure",
+          "order": 1
+        },
+        {
+          "id": "edge_relay_state_default",
+          "from": { "nodeId": "node_relay_state_default", "port": "sceneState" },
+          "to": { "nodeId": "node_relay_states", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_relay_state_detail",
+          "from": { "nodeId": "node_relay_state_detail", "port": "sceneState" },
+          "to": { "nodeId": "node_relay_states", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_relay_states_viewer",
+          "from": { "nodeId": "node_relay_states", "port": "states" },
+          "to": { "nodeId": "node_relay_viewer", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_relay_click_set_state",
+          "from": { "nodeId": "node_relay_click", "port": "event" },
+          "to": { "nodeId": "node_relay_set_state", "port": "trigger" },
+          "kind": "event"
+        },
+        {
+          "id": "edge_relay_state_emit",
+          "from": { "nodeId": "node_relay_state_change", "port": "event" },
+          "to": { "nodeId": "node_relay_emit", "port": "trigger" },
+          "kind": "event"
+        },
+        {
+          "id": "edge_relay_emit_log",
+          "from": { "nodeId": "node_relay_emit", "port": "event" },
+          "to": { "nodeId": "node_relay_log", "port": "trigger" },
+          "kind": "event"
+        }
+      ]
+    }
+  ],
+  "assets": []
+}

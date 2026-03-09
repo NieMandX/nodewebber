@@ -8,6 +8,7 @@ import type {
   ViewerOverlayProps,
 } from '@procedural-web-composer/shared-types'
 import type { UiNode } from '@procedural-web-composer/ui-tree'
+import { useGraphEventController } from './graph-events'
 import {
   applyViewerAction,
   getHotspotAction,
@@ -19,6 +20,7 @@ export function ViewerBlockRenderer(props: {
   node: UiNode
   renderChildren: (children: UiNode[]) => ReactNode[]
 }): JSX.Element {
+  const controller = useGraphEventController()
   const viewerProps = props.node.props as ViewerBlockProps
   const overlayChildren = props.node.slots?.overlay ?? []
   const stateSignature = JSON.stringify(viewerProps.states ?? [])
@@ -26,9 +28,13 @@ export function ViewerBlockRenderer(props: {
   const [interactionState, setInteractionState] = React.useState(() =>
     getInitialViewerInteractionState(viewerProps),
   )
+  const hasMountedRef = React.useRef(false)
+  const previousActiveStateIdRef = React.useRef<string | undefined>(undefined)
 
   React.useEffect(() => {
     setInteractionState(getInitialViewerInteractionState(viewerProps))
+    hasMountedRef.current = false
+    previousActiveStateIdRef.current = undefined
   }, [
     props.node.id,
     viewerProps.activeStateId,
@@ -41,6 +47,80 @@ export function ViewerBlockRenderer(props: {
   const resolved = resolveViewerConfig(viewerProps, interactionState)
   const statePickerLocked = isNonEmptyString(viewerProps.activeStateId)
   const variantPickerLocked = isNonEmptyString(viewerProps.activeVariantId)
+
+  React.useEffect(() => {
+    if (!controller) {
+      return
+    }
+
+    return controller.registerViewerCommands(props.node.id, {
+      focusCamera: (camera, stateId) => {
+        setInteractionState((currentState) => ({
+          ...currentState,
+          ...(stateId ? { activeStateId: stateId } : {}),
+          focusedCamera: camera,
+        }))
+      },
+      setState: (stateId) => {
+        setInteractionState((currentState) =>
+          currentState.activeStateId === stateId
+            ? currentState
+            : {
+                activeStateId: stateId,
+                activeVariantId: undefined,
+                activeHotspotId: undefined,
+                focusedCamera: undefined,
+              },
+        )
+      },
+      setVariant: (variantId) => {
+        setInteractionState((currentState) =>
+          currentState.activeVariantId === variantId
+            ? currentState
+            : {
+                ...currentState,
+                activeVariantId: variantId,
+              },
+        )
+      },
+      showHotspot: (hotspotId) => {
+        setInteractionState((currentState) =>
+          currentState.activeHotspotId === hotspotId
+            ? currentState
+            : {
+                ...currentState,
+                activeHotspotId: hotspotId,
+              },
+        )
+      },
+    })
+  }, [controller, props.node.id])
+
+  React.useEffect(() => {
+    if (!controller) {
+      previousActiveStateIdRef.current = resolved.activeStateId
+      return
+    }
+
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true
+      previousActiveStateIdRef.current = resolved.activeStateId
+      return
+    }
+
+    if (previousActiveStateIdRef.current === resolved.activeStateId) {
+      return
+    }
+
+    previousActiveStateIdRef.current = resolved.activeStateId
+    controller.emitViewerStateChange({
+      viewerNodeId: props.node.id,
+      ...(resolved.activeStateId ? { stateId: resolved.activeStateId } : {}),
+      data: {
+        title: resolved.title ?? '',
+      },
+    })
+  }, [controller, props.node.id, resolved.activeStateId, resolved.title])
 
   return (
     <section
@@ -173,11 +253,19 @@ export function ViewerBlockRenderer(props: {
                 style={selectStyle}
                 onChange={(event) => {
                   const nextValue = event.target.value.trim()
-                  setInteractionState({
-                    activeStateId: nextValue.length > 0 ? nextValue : undefined,
-                    activeVariantId: undefined,
-                    activeHotspotId: undefined,
-                    focusedCamera: undefined,
+                  setInteractionState((currentState) => {
+                    const activeStateId = nextValue.length > 0 ? nextValue : undefined
+
+                    if (currentState.activeStateId === activeStateId) {
+                      return currentState
+                    }
+
+                    return {
+                      activeStateId,
+                      activeVariantId: undefined,
+                      activeHotspotId: undefined,
+                      focusedCamera: undefined,
+                    }
                   })
                 }}
               >
@@ -201,10 +289,18 @@ export function ViewerBlockRenderer(props: {
                 style={selectStyle}
                 onChange={(event) => {
                   const nextValue = event.target.value.trim()
-                  setInteractionState((currentState) => ({
-                    ...currentState,
-                    activeVariantId: nextValue.length > 0 ? nextValue : undefined,
-                  }))
+                  setInteractionState((currentState) => {
+                    const activeVariantId = nextValue.length > 0 ? nextValue : undefined
+
+                    if (currentState.activeVariantId === activeVariantId) {
+                      return currentState
+                    }
+
+                    return {
+                      ...currentState,
+                      activeVariantId,
+                    }
+                  })
                 }}
               >
                 <option value="">Base variant</option>
@@ -244,6 +340,14 @@ export function ViewerBlockRenderer(props: {
                 disabled={!resolved.interactionsEnabled}
                 onClick={() => {
                   const action = getHotspotAction(hotspot)
+
+                  controller?.emitViewerHotspotClick({
+                    viewerNodeId: props.node.id,
+                    ...(hotspot.id ? { hotspotId: hotspot.id } : {}),
+                    data: {
+                      label: hotspot.label ?? '',
+                    },
+                  })
 
                   if (action) {
                     setInteractionState((currentState) => ({

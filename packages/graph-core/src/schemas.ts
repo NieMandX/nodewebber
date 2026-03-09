@@ -7,6 +7,7 @@ export const valueTypeSchema = z.enum([
   'unknown',
   'object',
   'array',
+  'event',
   'ui-node',
   'ui-children',
   'style-token',

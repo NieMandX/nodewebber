@@ -52,6 +52,7 @@ export function toReactFlowEdges(graph: GraphDocument): Edge[] {
     style: {
       stroke: edgeColor(edge.kind),
       strokeWidth: edge.kind === 'structure' ? 2.4 : 1.8,
+      ...(edge.kind === 'event' ? { strokeDasharray: '6 4' } : {}),
     },
   }))
 }
@@ -88,6 +89,10 @@ export function parseHandleId(
 export function getPortEdgeKind(port: PortDefinition, direction: 'input' | 'output'): EdgeKind {
   if (port.key === 'parent') {
     return 'structure'
+  }
+
+  if (port.valueType === 'event') {
+    return 'event'
   }
 
   if (port.valueType === 'theme' || port.valueType === 'style-token') {

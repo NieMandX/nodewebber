@@ -1,0 +1,155 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_button_to_viewer_state",
+    "name": "Button To Viewer State",
+    "createdAt": "2026-03-09T20:05:00.000Z",
+    "updatedAt": "2026-03-09T20:05:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_button_to_viewer_state",
+    "themeMode": "light"
+  },
+  "graphs": [
+    {
+      "id": "graph_button_to_viewer_state",
+      "name": "Button To Viewer State",
+      "kind": "page",
+      "nodes": [
+        {
+          "id": "node_button_page",
+          "type": "layout.page",
+          "version": 1,
+          "position": { "x": 40, "y": 80 },
+          "params": { "maxWidth": 1040, "padding": 32 }
+        },
+        {
+          "id": "node_button_stack",
+          "type": "layout.stack",
+          "version": 1,
+          "position": { "x": 280, "y": 80 },
+          "params": { "direction": "column", "gap": 20, "align": "stretch" }
+        },
+        {
+          "id": "node_button_trigger",
+          "type": "content.button",
+          "version": 1,
+          "position": { "x": 540, "y": 40 },
+          "params": {
+            "label": "Open Detail View",
+            "href": "#",
+            "variant": "solid"
+          }
+        },
+        {
+          "id": "node_button_viewer",
+          "type": "viewer.block",
+          "version": 1,
+          "position": { "x": 540, "y": 220 },
+          "params": {
+            "title": "Headset Viewer",
+            "modelSrc": "/models/headset.glb",
+            "initialStateId": "default",
+            "interactionsEnabled": true
+          }
+        },
+        {
+          "id": "node_button_state_default",
+          "type": "viewer.state",
+          "version": 1,
+          "position": { "x": 540, "y": 460 },
+          "params": {
+            "id": "default",
+            "label": "Overview"
+          }
+        },
+        {
+          "id": "node_button_state_detail",
+          "type": "viewer.state",
+          "version": 1,
+          "position": { "x": 540, "y": 620 },
+          "params": {
+            "id": "detail",
+            "label": "Detail",
+            "titleOverride": "Exploded Detail"
+          }
+        },
+        {
+          "id": "node_button_states",
+          "type": "viewer.states",
+          "version": 1,
+          "position": { "x": 820, "y": 540 },
+          "params": {}
+        },
+        {
+          "id": "node_button_click",
+          "type": "ui.onClick",
+          "version": 1,
+          "position": { "x": 820, "y": 80 },
+          "params": {
+            "targetNodeId": "node_button_trigger",
+            "eventName": "ui.button.detail"
+          }
+        },
+        {
+          "id": "node_button_reaction",
+          "type": "events.setViewerState",
+          "version": 1,
+          "position": { "x": 1080, "y": 80 },
+          "params": {
+            "viewerBlockNodeId": "node_button_viewer",
+            "stateId": "detail"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_button_page_stack",
+          "from": { "nodeId": "node_button_page", "port": "ui" },
+          "to": { "nodeId": "node_button_stack", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_button_stack_trigger",
+          "from": { "nodeId": "node_button_stack", "port": "ui" },
+          "to": { "nodeId": "node_button_trigger", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_button_stack_viewer",
+          "from": { "nodeId": "node_button_stack", "port": "ui" },
+          "to": { "nodeId": "node_button_viewer", "port": "parent" },
+          "kind": "structure",
+          "order": 1
+        },
+        {
+          "id": "edge_button_state_default",
+          "from": { "nodeId": "node_button_state_default", "port": "sceneState" },
+          "to": { "nodeId": "node_button_states", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_button_state_detail",
+          "from": { "nodeId": "node_button_state_detail", "port": "sceneState" },
+          "to": { "nodeId": "node_button_states", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_button_states_viewer",
+          "from": { "nodeId": "node_button_states", "port": "states" },
+          "to": { "nodeId": "node_button_viewer", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_button_click_reaction",
+          "from": { "nodeId": "node_button_click", "port": "event" },
+          "to": { "nodeId": "node_button_reaction", "port": "trigger" },
+          "kind": "event"
+        }
+      ]
+    }
+  ],
+  "assets": []
+}

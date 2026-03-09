@@ -9,6 +9,7 @@ export type ValueType =
   | 'unknown'
   | 'object'
   | 'array'
+  | 'event'
   | 'ui-node'
   | 'ui-children'
   | 'style-token'
@@ -248,6 +249,61 @@ export interface ViewerOverlayProps {
   position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
 }
 
+export interface GraphEventPayload {
+  type: string
+  sourceNodeId?: string
+  data?: Record<string, unknown>
+}
+
+export interface GraphEventSourceBinding {
+  nodeId: string
+  graphId: string
+  sourceType: 'viewer.onHotspotClick' | 'viewer.onStateChange' | 'ui.onClick'
+  outputPort: string
+  eventName: string
+  viewerBlockNodeId?: string
+  hotspotId?: string
+  stateId?: string
+  targetNodeId?: string
+}
+
+export interface GraphEventReactionBinding {
+  nodeId: string
+  graphId: string
+  reactionType:
+    | 'events.setViewerState'
+    | 'events.setViewerVariant'
+    | 'events.focusViewerCamera'
+    | 'events.emit'
+    | 'events.log'
+  inputPort: string
+  outputPort?: string
+  viewerBlockNodeId?: string
+  stateId?: string
+  variantId?: string
+  camera?: ViewerCameraConfig
+  eventName?: string
+  payload?: Record<string, unknown>
+  label?: string
+}
+
+export interface GraphEventBindingEdge {
+  edgeId: string
+  graphId: string
+  sourceNodeId: string
+  sourcePort: string
+  targetNodeId: string
+  targetPort: string
+}
+
+export interface GraphEventRuntime {
+  graphId: string
+  sources: GraphEventSourceBinding[]
+  reactions: GraphEventReactionBinding[]
+  edges: GraphEventBindingEdge[]
+  maxDispatchDepth: number
+}
+
 export interface EvaluationContext {
   project: ProjectDocument
   graph: GraphDocument
@@ -311,6 +367,7 @@ export interface ProjectRuntimeResult {
   graph: GraphDocument | undefined
   root: UiNode | null
   evaluation?: GraphEvaluation
+  eventRuntime?: GraphEventRuntime
   validation: GraphValidationResult
   issues: RuntimeIssue[]
 }

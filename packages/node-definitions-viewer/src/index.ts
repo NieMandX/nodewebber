@@ -1,6 +1,7 @@
 import { z } from 'zod'
 import type { UiNode } from '@procedural-web-composer/ui-tree'
 import type {
+  GraphEventPayload,
   NodeDefinition,
   ViewerActionConfig,
   ViewerBlockProps,
@@ -55,6 +56,11 @@ const variantOutput = {
 const variantListOutput = {
   key: 'variants',
   valueType: 'array' as const,
+}
+
+const eventOutput = {
+  key: 'event',
+  valueType: 'event' as const,
 }
 
 const loadingModeSchema = z.enum(['eager', 'lazy'])
@@ -148,6 +154,22 @@ const viewerActionParamsSchema = z
     variantId: z.string().optional(),
     hotspotId: z.string().optional(),
     camera: z.record(z.unknown()).optional(),
+  })
+  .passthrough()
+
+const viewerHotspotEventParamsSchema = z
+  .object({
+    viewerBlockNodeId: z.string().optional(),
+    hotspotId: z.string().optional(),
+    eventName: z.string().optional(),
+  })
+  .passthrough()
+
+const viewerStateEventParamsSchema = z
+  .object({
+    viewerBlockNodeId: z.string().optional(),
+    stateId: z.string().optional(),
+    eventName: z.string().optional(),
   })
   .passthrough()
 
@@ -252,6 +274,18 @@ const viewerActionDefaultParams = {
   variantId: '',
   hotspotId: '',
   camera: {},
+}
+
+const viewerHotspotEventDefaultParams = {
+  viewerBlockNodeId: '',
+  hotspotId: '',
+  eventName: 'viewer.hotspotClick',
+}
+
+const viewerStateEventDefaultParams = {
+  viewerBlockNodeId: '',
+  stateId: '',
+  eventName: 'viewer.stateChange',
 }
 
 const viewerHotspotDefaultParams = {
@@ -486,6 +520,68 @@ export const viewerStateNodeDefinition: NodeDefinition = {
             : {}),
           ...(metadata ? { metadata } : {}),
         } satisfies ViewerSceneStateConfig,
+      },
+    }
+  },
+}
+
+export const viewerOnHotspotClickNodeDefinition: NodeDefinition = {
+  type: 'viewer.onHotspotClick',
+  version: 1,
+  title: 'On Hotspot Click',
+  category: 'Events',
+  inputs: [],
+  outputs: [eventOutput],
+  defaultParams: viewerHotspotEventDefaultParams,
+  paramsSchema: viewerHotspotEventParamsSchema,
+  evaluate: (node) => {
+    const params = viewerHotspotEventParamsSchema.safeParse(node.params).success
+      ? viewerHotspotEventParamsSchema.parse(node.params)
+      : viewerHotspotEventDefaultParams
+
+    return {
+      outputs: {
+        event: {
+          type: params.eventName ?? 'viewer.hotspotClick',
+          sourceNodeId: node.id,
+          data: {
+            ...(isNonEmptyString(params.viewerBlockNodeId)
+              ? { viewerBlockNodeId: params.viewerBlockNodeId }
+              : {}),
+            ...(isNonEmptyString(params.hotspotId) ? { hotspotId: params.hotspotId } : {}),
+          },
+        } satisfies GraphEventPayload,
+      },
+    }
+  },
+}
+
+export const viewerOnStateChangeNodeDefinition: NodeDefinition = {
+  type: 'viewer.onStateChange',
+  version: 1,
+  title: 'On State Change',
+  category: 'Events',
+  inputs: [],
+  outputs: [eventOutput],
+  defaultParams: viewerStateEventDefaultParams,
+  paramsSchema: viewerStateEventParamsSchema,
+  evaluate: (node) => {
+    const params = viewerStateEventParamsSchema.safeParse(node.params).success
+      ? viewerStateEventParamsSchema.parse(node.params)
+      : viewerStateEventDefaultParams
+
+    return {
+      outputs: {
+        event: {
+          type: params.eventName ?? 'viewer.stateChange',
+          sourceNodeId: node.id,
+          data: {
+            ...(isNonEmptyString(params.viewerBlockNodeId)
+              ? { viewerBlockNodeId: params.viewerBlockNodeId }
+              : {}),
+            ...(isNonEmptyString(params.stateId) ? { stateId: params.stateId } : {}),
+          },
+        } satisfies GraphEventPayload,
       },
     }
   },
@@ -747,6 +843,8 @@ export const viewerNodeDefinitions: NodeDefinition[] = [
   viewerEnvironmentNodeDefinition,
   viewerCameraPresetNodeDefinition,
   viewerStateNodeDefinition,
+  viewerOnHotspotClickNodeDefinition,
+  viewerOnStateChangeNodeDefinition,
   viewerStatesNodeDefinition,
   viewerVariantNodeDefinition,
   viewerVariantsNodeDefinition,

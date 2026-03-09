@@ -2,12 +2,14 @@ import React from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { normalizeThemeValue } from '@procedural-web-composer/shared-utils'
 import type { UiNode } from '@procedural-web-composer/ui-tree'
-import type { ThemeValue } from '@procedural-web-composer/shared-types'
+import type { GraphEventRuntime, ThemeValue } from '@procedural-web-composer/shared-types'
+import { GraphEventProvider, useGraphEventController } from './graph-events'
 import { ViewerBlockRenderer, ViewerOverlayRenderer } from './viewer-renderer'
 
 export interface PreviewRendererProps {
   root: UiNode | null
   emptyMessage?: string
+  eventRuntime: GraphEventRuntime | undefined
 }
 
 export function PreviewRenderer(props: PreviewRendererProps): ReactNode {
@@ -20,7 +22,11 @@ export function PreviewRenderer(props: PreviewRendererProps): ReactNode {
     )
   }
 
-  return renderUiTree(props.root)
+  return (
+    <GraphEventProvider eventRuntime={props.eventRuntime}>
+      {renderUiTree(props.root)}
+    </GraphEventProvider>
+  )
 }
 
 export function renderUiTree(node: UiNode): ReactNode {
@@ -155,9 +161,9 @@ function renderUiNode(node: UiNode): ReactNode {
     const variant = node.props.variant === 'ghost' ? 'ghost' : 'solid'
 
     return (
-      <a
+      <ButtonNodeRenderer
         key={node.id}
-        href={String(node.props.href ?? '#')}
+        node={node}
         style={{
           ...buttonBaseStyle,
           ...toCssProperties(node.styles),
@@ -165,9 +171,7 @@ function renderUiNode(node: UiNode): ReactNode {
           color: variant === 'solid' ? 'white' : 'var(--pwc-text)',
           borderColor: variant === 'solid' ? 'transparent' : 'rgba(31, 27, 23, 0.2)',
         }}
-      >
-        {String(node.props.label ?? '')}
-      </a>
+      />
     )
   }
 
@@ -195,6 +199,38 @@ function renderUiNode(node: UiNode): ReactNode {
 
 function renderChildren(children: UiNode[]): ReactNode[] {
   return children.map((child) => <React.Fragment key={child.id}>{renderUiNode(child)}</React.Fragment>)
+}
+
+function ButtonNodeRenderer(props: {
+  node: UiNode
+  style: CSSProperties
+}): JSX.Element {
+  const controller = useGraphEventController()
+  const href = String(props.node.props.href ?? '#')
+  const label = String(props.node.props.label ?? '')
+  const hasBinding = controller?.hasUiClickBinding(props.node.id) ?? false
+
+  return (
+    <a
+      href={href}
+      style={props.style}
+      onClick={(event) => {
+        if (hasBinding || href === '#') {
+          event.preventDefault()
+        }
+
+        controller?.emitUiClick({
+          targetNodeId: props.node.id,
+          data: {
+            href,
+            label,
+          },
+        })
+      }}
+    >
+      {label}
+    </a>
+  )
 }
 
 function sectionStyle(node: UiNode): CSSProperties {

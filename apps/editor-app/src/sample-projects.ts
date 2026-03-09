@@ -7,14 +7,38 @@ import subgraphCardGrid from '../../../examples/subgraph-card-grid.json'
 import subgraphHeroComponent from '../../../examples/subgraph-hero-component.json'
 import subgraphSlotActions from '../../../examples/subgraph-slot-actions.json'
 import viewerBasic from '../../../examples/viewer-basic.json'
+import buttonToViewerState from '../../../examples/button-to-viewer-state.json'
 import viewerHotspotActions from '../../../examples/viewer-hotspot-actions.json'
 import viewerHotspots from '../../../examples/viewer-hotspots.json'
+import viewerEventsInSubgraph from '../../../examples/viewer-events-in-subgraph.json'
+import viewerHotspotToState from '../../../examples/viewer-hotspot-to-state.json'
 import viewerInSubgraph from '../../../examples/viewer-in-subgraph.json'
 import viewerSceneStates from '../../../examples/viewer-scene-states.json'
+import viewerStateRelay from '../../../examples/viewer-state-relay.json'
 import viewerStateSubgraph from '../../../examples/viewer-state-subgraph.json'
 import viewerVariants from '../../../examples/viewer-variants.json'
 
 export const sampleProjects = [
+  {
+    key: 'viewer-hotspot-to-state',
+    label: 'Viewer Hotspot To State',
+    document: viewerHotspotToState,
+  },
+  {
+    key: 'button-to-viewer-state',
+    label: 'Button To Viewer State',
+    document: buttonToViewerState,
+  },
+  {
+    key: 'viewer-state-relay',
+    label: 'Viewer State Relay',
+    document: viewerStateRelay,
+  },
+  {
+    key: 'viewer-events-in-subgraph',
+    label: 'Viewer Events In Subgraph',
+    document: viewerEventsInSubgraph,
+  },
   {
     key: 'viewer-scene-states',
     label: 'Viewer Scene States',

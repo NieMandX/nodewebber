@@ -279,6 +279,20 @@ export function validateEdges(
       }
     }
 
+    if (
+      edge.kind === 'event' &&
+      (outputPort.valueType !== 'event' || inputPort.valueType !== 'event')
+    ) {
+      issues.push({
+        code: 'event_edge_port_invalid',
+        message: `Event edge "${edge.id}" must connect event ports, not ${outputPort.valueType} -> ${inputPort.valueType}.`,
+        severity: 'warning',
+        graphId: graph.id,
+        edgeId: edge.id,
+      })
+      continue
+    }
+
     const incomingKey = `${edge.to.nodeId}:${edge.to.port}`
     incomingPortCounts.set(incomingKey, (incomingPortCounts.get(incomingKey) ?? 0) + 1)
 
@@ -788,6 +802,174 @@ function validateGraphSemantics(
         })
       }
     }
+
+    if (node.type === 'viewer.onHotspotClick' || node.type === 'viewer.onStateChange') {
+      const resolvedViewerTargetId = resolveViewerTargetNodeId(graph, node)
+
+      if (!resolvedViewerTargetId) {
+        issues.push({
+          code: 'viewer_event_target_missing',
+          message: `Viewer event source "${node.id}" does not reference a target viewer block.`,
+          severity: 'warning',
+          graphId: graph.id,
+          nodeId: node.id,
+        })
+        continue
+      }
+
+      const viewerTargetNode = nodesById.get(resolvedViewerTargetId)
+
+      if (viewerTargetNode?.type !== 'viewer.block') {
+        issues.push({
+          code: 'viewer_event_target_unknown',
+          message: `Viewer event source "${node.id}" references unknown viewer block "${resolvedViewerTargetId}".`,
+          severity: 'warning',
+          graphId: graph.id,
+          nodeId: node.id,
+        })
+        continue
+      }
+
+      if (node.type === 'viewer.onHotspotClick') {
+        const hotspotId = readViewerString(node.params.hotspotId)
+
+        if (hotspotId) {
+          const knownHotspotIds = new Set(
+            collectViewerHotspotReferences(graph, nodesById, viewerTargetNode)
+              .map((hotspotReference) => hotspotReference.id)
+              .filter((candidate): candidate is string => Boolean(candidate)),
+          )
+
+          if (!knownHotspotIds.has(hotspotId)) {
+            issues.push({
+              code: 'event_viewer_hotspot_unknown',
+              message: `Viewer event source "${node.id}" references unknown hotspot "${hotspotId}".`,
+              severity: 'warning',
+              graphId: graph.id,
+              nodeId: node.id,
+            })
+          }
+        }
+      }
+
+      if (node.type === 'viewer.onStateChange') {
+        const stateId = readViewerString(node.params.stateId)
+
+        if (stateId) {
+          const knownStateIds = new Set(
+            collectViewerStateReferences(graph, nodesById, viewerTargetNode)
+              .map((stateReference) => stateReference.id)
+              .filter((candidate): candidate is string => Boolean(candidate)),
+          )
+
+          if (!knownStateIds.has(stateId)) {
+            issues.push({
+              code: 'event_viewer_state_unknown',
+              message: `Viewer event source "${node.id}" references unknown state "${stateId}".`,
+              severity: 'warning',
+              graphId: graph.id,
+              nodeId: node.id,
+            })
+          }
+        }
+      }
+    }
+
+    if (
+      node.type === 'events.setViewerState' ||
+      node.type === 'events.setViewerVariant' ||
+      node.type === 'events.focusViewerCamera'
+    ) {
+      const resolvedViewerTargetId = resolveViewerTargetNodeId(graph, node)
+
+      if (!resolvedViewerTargetId) {
+        issues.push({
+          code: 'event_reaction_viewer_missing',
+          message: `Event reaction "${node.id}" does not reference a target viewer block.`,
+          severity: 'warning',
+          graphId: graph.id,
+          nodeId: node.id,
+        })
+        continue
+      }
+
+      const viewerTargetNode = nodesById.get(resolvedViewerTargetId)
+
+      if (viewerTargetNode?.type !== 'viewer.block') {
+        issues.push({
+          code: 'event_reaction_viewer_unknown',
+          message: `Event reaction "${node.id}" references unknown viewer block "${resolvedViewerTargetId}".`,
+          severity: 'warning',
+          graphId: graph.id,
+          nodeId: node.id,
+        })
+        continue
+      }
+
+      const knownStateIds = new Set(
+        collectViewerStateReferences(graph, nodesById, viewerTargetNode)
+          .map((stateReference) => stateReference.id)
+          .filter((candidate): candidate is string => Boolean(candidate)),
+      )
+      const knownVariantIds = new Set(
+        collectViewerVariantReferences(graph, nodesById, viewerTargetNode)
+          .map((variantReference) => variantReference.id)
+          .filter((candidate): candidate is string => Boolean(candidate)),
+      )
+
+      if (node.type === 'events.setViewerState') {
+        const stateId = readViewerString(node.params.stateId)
+
+        if (!stateId || !knownStateIds.has(stateId)) {
+          issues.push({
+            code: 'event_viewer_state_unknown',
+            message: `Event reaction "${node.id}" references unknown state "${stateId ?? ''}".`,
+            severity: 'warning',
+            graphId: graph.id,
+            nodeId: node.id,
+          })
+        }
+      }
+
+      if (node.type === 'events.setViewerVariant') {
+        const variantId = readViewerString(node.params.variantId)
+
+        if (!variantId || !knownVariantIds.has(variantId)) {
+          issues.push({
+            code: 'event_viewer_variant_unknown',
+            message: `Event reaction "${node.id}" references unknown variant "${variantId ?? ''}".`,
+            severity: 'warning',
+            graphId: graph.id,
+            nodeId: node.id,
+          })
+        }
+      }
+
+      if (node.type === 'events.focusViewerCamera') {
+        const stateId = readViewerString(node.params.stateId)
+        const camera = asRecord(node.params.camera)
+
+        if (!stateId && !camera) {
+          issues.push({
+            code: 'event_focus_camera_incomplete',
+            message: `Event reaction "${node.id}" must provide either a camera override or a state id.`,
+            severity: 'warning',
+            graphId: graph.id,
+            nodeId: node.id,
+          })
+        }
+
+        if (stateId && !knownStateIds.has(stateId)) {
+          issues.push({
+            code: 'event_viewer_state_unknown',
+            message: `Event reaction "${node.id}" references unknown state "${stateId}".`,
+            severity: 'warning',
+            graphId: graph.id,
+            nodeId: node.id,
+          })
+        }
+      }
+    }
   }
 
   return issues
@@ -1159,6 +1341,23 @@ function resolveViewerInteractionsEnabled(
   return viewerBlockNode.params.interactionsEnabled !== false
 }
 
+function resolveViewerTargetNodeId(
+  graph: GraphDocument,
+  node: { params: Record<string, unknown> },
+): string | undefined {
+  const explicitViewerId = readViewerString(node.params.viewerBlockNodeId)
+
+  if (explicitViewerId) {
+    return explicitViewerId
+  }
+
+  const viewerBlockIds = graph.nodes
+    .filter((candidate) => candidate.type === 'viewer.block')
+    .map((candidate) => candidate.id)
+
+  return viewerBlockIds.length === 1 ? viewerBlockIds[0] : undefined
+}
+
 function getViewerActionFromNode(node: {
   type: string
   params: Record<string, unknown>
@@ -1351,7 +1550,7 @@ function isCompatibleEdgeKind(
   }
 
   if (edge.kind === 'event') {
-    return true
+    return outputType === 'event' && inputType === 'event'
   }
 
   if (outputType === 'unknown' || inputType === 'unknown') {

@@ -1,0 +1,158 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_viewer_hotspot_to_state",
+    "name": "Viewer Hotspot To State",
+    "createdAt": "2026-03-09T20:00:00.000Z",
+    "updatedAt": "2026-03-09T20:00:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_viewer_hotspot_to_state",
+    "themeMode": "dark"
+  },
+  "graphs": [
+    {
+      "id": "graph_viewer_hotspot_to_state",
+      "name": "Viewer Hotspot To State",
+      "kind": "page",
+      "nodes": [
+        {
+          "id": "node_hotspot_page",
+          "type": "layout.page",
+          "version": 1,
+          "position": { "x": 40, "y": 80 },
+          "params": { "maxWidth": 1040, "padding": 32 }
+        },
+        {
+          "id": "node_hotspot_viewer",
+          "type": "viewer.block",
+          "version": 1,
+          "position": { "x": 300, "y": 80 },
+          "params": {
+            "title": "Studio Coupe",
+            "description": "Hotspot clicks are routed through the graph event system.",
+            "modelSrc": "/models/coupe.glb",
+            "initialStateId": "default",
+            "interactionsEnabled": true
+          }
+        },
+        {
+          "id": "node_hotspot_state_default",
+          "type": "viewer.state",
+          "version": 1,
+          "position": { "x": 300, "y": 300 },
+          "params": {
+            "id": "default",
+            "label": "Overview",
+            "titleOverride": "Studio Coupe"
+          }
+        },
+        {
+          "id": "node_hotspot_state_detail",
+          "type": "viewer.state",
+          "version": 1,
+          "position": { "x": 300, "y": 460 },
+          "params": {
+            "id": "detail",
+            "label": "Detail Focus",
+            "titleOverride": "Detail Focus",
+            "descriptionOverride": "Event reaction pushes the viewer into the detail scene."
+          }
+        },
+        {
+          "id": "node_hotspot_states",
+          "type": "viewer.states",
+          "version": 1,
+          "position": { "x": 560, "y": 380 },
+          "params": {}
+        },
+        {
+          "id": "node_hotspot_marker",
+          "type": "viewer.hotspot",
+          "version": 1,
+          "position": { "x": 820, "y": 220 },
+          "params": {
+            "id": "door",
+            "label": "Door Seam",
+            "description": "Clicks route through viewer.onHotspotClick.",
+            "position": { "x": -0.4, "y": 0.7, "z": 0.5 }
+          }
+        },
+        {
+          "id": "node_hotspot_markers",
+          "type": "viewer.hotspots",
+          "version": 1,
+          "position": { "x": 1080, "y": 220 },
+          "params": {}
+        },
+        {
+          "id": "node_hotspot_event",
+          "type": "viewer.onHotspotClick",
+          "version": 1,
+          "position": { "x": 820, "y": 440 },
+          "params": {
+            "viewerBlockNodeId": "node_hotspot_viewer",
+            "hotspotId": "door",
+            "eventName": "viewer.hotspot.detail"
+          }
+        },
+        {
+          "id": "node_hotspot_reaction",
+          "type": "events.setViewerState",
+          "version": 1,
+          "position": { "x": 1080, "y": 440 },
+          "params": {
+            "viewerBlockNodeId": "node_hotspot_viewer",
+            "stateId": "detail"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_hotspot_page_viewer",
+          "from": { "nodeId": "node_hotspot_page", "port": "ui" },
+          "to": { "nodeId": "node_hotspot_viewer", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_hotspot_state_default",
+          "from": { "nodeId": "node_hotspot_state_default", "port": "sceneState" },
+          "to": { "nodeId": "node_hotspot_states", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_state_detail",
+          "from": { "nodeId": "node_hotspot_state_detail", "port": "sceneState" },
+          "to": { "nodeId": "node_hotspot_states", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_states_viewer",
+          "from": { "nodeId": "node_hotspot_states", "port": "states" },
+          "to": { "nodeId": "node_hotspot_viewer", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_marker_list",
+          "from": { "nodeId": "node_hotspot_marker", "port": "hotspot" },
+          "to": { "nodeId": "node_hotspot_markers", "port": "hotspots" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_list_viewer",
+          "from": { "nodeId": "node_hotspot_markers", "port": "hotspots" },
+          "to": { "nodeId": "node_hotspot_viewer", "port": "hotspots" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_event_state",
+          "from": { "nodeId": "node_hotspot_event", "port": "event" },
+          "to": { "nodeId": "node_hotspot_reaction", "port": "trigger" },
+          "kind": "event"
+        }
+      ]
+    }
+  ],
+  "assets": []
+}
