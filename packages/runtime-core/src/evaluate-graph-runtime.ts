@@ -12,6 +12,8 @@ import type {
 import { isUiNode, type UiNode } from '@procedural-web-composer/ui-tree'
 import { buildUiTree, getPrimaryUiOutput } from './build-ui-tree'
 
+export const REPEAT_PREVIEW_WARNING_THRESHOLD = 100
+
 export interface GraphRuntimeEvaluation {
   evaluation: GraphEvaluation
   root: UiNode | null
@@ -155,6 +157,7 @@ export function evaluateGraphRuntime(
     }
 
     const resolvedRuntime = cloneGraphRuntimeEvaluation(nestedRuntime)
+    issues.push(...resolvedRuntime.issues)
 
     if (!resolvedRuntime.root) {
       addRuntimeIssue(
@@ -175,13 +178,13 @@ export function evaluateGraphRuntime(
       ...record.outputs,
       ui: resolvedRuntime.root,
     }
-    issues.push(...resolvedRuntime.issues)
   }
 
   function resolveDataRepeat(node: NodeInstance): void {
     const record = ensureRecord(node, results)
     const itemsValue = resolveIncomingDataParams(node).items
     const items = Array.isArray(itemsValue) ? itemsValue : []
+    const repeatMemoCache = new Map<string, GraphRuntimeEvaluation>()
     const itemSubgraphGraphId =
       typeof node.params.itemSubgraphGraphId === 'string' && node.params.itemSubgraphGraphId.length > 0
         ? node.params.itemSubgraphGraphId
@@ -234,28 +237,53 @@ export function evaluateGraphRuntime(
       return
     }
 
+    if (items.length > REPEAT_PREVIEW_WARNING_THRESHOLD) {
+      addRuntimeIssue(
+        record,
+        issues,
+        createRuntimeIssue(
+          'repeat_large_list',
+          `Repeat node "${node.id}" is rendering ${items.length} items in preview. Large lists may degrade editor performance.`,
+          options.graph.id,
+          node.id,
+          'warning',
+        ),
+      )
+    }
+
+    const repeatSubgraphDefinition = getSubgraphDefinition(options.document, itemSubgraphGraphId)
+    const canMemoizeByItem =
+      repeatSubgraphDefinition !== undefined &&
+      !Object.hasOwn(repeatSubgraphDefinition.publicParamsSchema, 'index')
+
     const repeatedChildren: UiNode[] = []
 
     for (const [index, item] of items.entries()) {
+      const runtimeParams = {
+        ...(repeatSubgraphDefinition?.publicDefaultParams ?? {}),
+        item,
+        index,
+      }
       const cacheKey = createRuntimeCacheKey('repeat-item', {
         graphId: itemSubgraphGraphId,
-        params: {
-          item,
-          index,
-        },
+        params: runtimeParams,
       })
+      const memoCacheKey = canMemoizeByItem
+        ? createRuntimeCacheKey('repeat-item-memo', {
+            graphId: itemSubgraphGraphId,
+            item,
+          })
+        : undefined
+      const memoized = memoCacheKey ? repeatMemoCache.get(memoCacheKey) : undefined
       const cached = options.runtimeCache.get(cacheKey)
       const nestedRuntime =
+        memoized ??
         cached ??
         evaluateGraphRuntime({
           ...options,
           graph: injectSubgraphRuntimeState(
             referencedGraph,
-            {
-              ...(getSubgraphDefinition(options.document, itemSubgraphGraphId)?.publicDefaultParams ?? {}),
-              item,
-              index,
-            },
+            runtimeParams,
             {},
           ),
           visitedGraphIds: [...options.visitedGraphIds, itemSubgraphGraphId],
@@ -263,6 +291,10 @@ export function evaluateGraphRuntime(
 
       if (!cached) {
         options.runtimeCache.set(cacheKey, cloneGraphRuntimeEvaluation(nestedRuntime))
+      }
+
+      if (!memoized && memoCacheKey) {
+        repeatMemoCache.set(memoCacheKey, cloneGraphRuntimeEvaluation(nestedRuntime))
       }
 
       const resolvedRuntime = cloneGraphRuntimeEvaluation(nestedRuntime)

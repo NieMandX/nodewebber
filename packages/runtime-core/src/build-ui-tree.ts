@@ -39,11 +39,7 @@ export function buildUiTree(
     const maybeUi = getPrimaryUiOutput(registry.getNodeDefinition(node.type), record)
 
     if (maybeUi && isUiNode(maybeUi)) {
-      uiByNodeId.set(node.id, {
-        ...maybeUi,
-        children: [],
-        ...(maybeUi.slots ? { slots: {} } : {}),
-      })
+      uiByNodeId.set(node.id, structuredClone(maybeUi))
     }
   }
 
@@ -159,13 +155,31 @@ function assembleNodeTree(
         .filter((child): child is UiNode => child !== null),
     ] as const)
     .filter((entry) => entry[1].length > 0)
-  const resolvedSlots = Object.fromEntries(resolvedSlotsEntries)
-  const children = resolvedSlots.children ?? []
+  const resolvedSlots = Object.fromEntries(resolvedSlotsEntries) as Record<string, UiNode[]>
+  const baseSlots = uiNode.slots ?? {}
+  const mergedSlotNames = new Set([
+    ...Object.keys(baseSlots),
+    ...Object.keys(resolvedSlots),
+  ])
+  const mergedSlotEntries = [...mergedSlotNames]
+    .map((slotName) => {
+      const baseSlotChildren =
+        slotName === 'children' ? uiNode.children : (baseSlots[slotName] ?? [])
+      const structuralSlotChildren = resolvedSlots[slotName] ?? []
+
+      return [
+        slotName,
+        [...baseSlotChildren, ...structuralSlotChildren],
+      ] as const
+    })
+    .filter((entry) => entry[1].length > 0)
+  const mergedSlots = Object.fromEntries(mergedSlotEntries) as Record<string, UiNode[]>
+  const children = mergedSlots.children ?? uiNode.children
 
   return {
     ...uiNode,
     children,
-    ...(Object.keys(resolvedSlots).length > 0 ? { slots: resolvedSlots } : {}),
+    ...(Object.keys(mergedSlots).length > 0 ? { slots: mergedSlots } : {}),
   }
 }
 

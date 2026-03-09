@@ -54,7 +54,10 @@ export function evaluateGraphDocument(
 }
 
 export { buildUiTree, getPrimaryUiOutput } from './build-ui-tree'
-export { evaluateGraphRuntime } from './evaluate-graph-runtime'
+export {
+  evaluateGraphRuntime,
+  REPEAT_PREVIEW_WARNING_THRESHOLD,
+} from './evaluate-graph-runtime'
 
 function getGraphDocument(
   document: ProjectDocument,

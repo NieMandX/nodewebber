@@ -69,6 +69,16 @@ export function walkUiTree(
     for (const child of node.children) {
       visit(child, node)
     }
+
+    for (const [slotName, slotChildren] of Object.entries(node.slots ?? {})) {
+      if (slotName === 'children') {
+        continue
+      }
+
+      for (const child of slotChildren) {
+        visit(child, node)
+      }
+    }
   }
 }
 
@@ -88,7 +98,9 @@ export function mapUiTree(
               slots: Object.fromEntries(
                 Object.entries(node.slots).map(([slotName, slotChildren]) => [
                   slotName,
-                  slotChildren.map((child) => visit(child, node)),
+                  slotName === 'children'
+                    ? node.children.map((child) => visit(child, node))
+                    : slotChildren.map((child) => visit(child, node)),
                 ]),
               ),
             }

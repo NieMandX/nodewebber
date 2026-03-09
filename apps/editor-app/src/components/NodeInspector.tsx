@@ -11,6 +11,7 @@ import type {
   ValueType,
 } from '@procedural-web-composer/shared-types'
 import { useStore } from 'zustand'
+import { getSlotInspectorHints } from './slot-hints'
 
 export interface NodeInspectorProps {
   store: EditorStore
@@ -65,6 +66,7 @@ export function NodeInspector(props: NodeInspectorProps): JSX.Element {
   )
   const generalFields = schemaFields.filter((field) => !bindableInputKeys.has(field.key))
   const nodeIssues = props.issues.filter((issue) => issue.nodeId === node.id)
+  const slotHints = getSlotInspectorHints(slotNames)
 
   return (
     <div className="inspector-stack">
@@ -80,21 +82,31 @@ export function NodeInspector(props: NodeInspectorProps): JSX.Element {
             <span className="field-caption">Node ID</span>
             <code className="code-chip">{node.id}</code>
           </div>
-        {node.type === 'subgraph.instance' ? (
-          <div>
-            <span className="field-caption">Referenced graph</span>
-            <strong>{referencedSubgraph?.title ?? 'Missing component'}</strong>
-            <small>{referencedSubgraphId ?? 'No graph id set'}</small>
+          {node.type === 'subgraph.instance' ? (
+            <div>
+              <span className="field-caption">Referenced graph</span>
+              <strong>{referencedSubgraph?.title ?? 'Missing component'}</strong>
+              <small>{referencedSubgraphId ?? 'No graph id set'}</small>
+            </div>
+          ) : null}
+          {slotNames.length > 0 ? (
+            <div>
+              <span className="field-caption">Slots</span>
+              <strong>{slotNames.join(', ')}</strong>
+              <small>{slotNames.length} available slot{slotNames.length === 1 ? '' : 's'}</small>
+            </div>
+          ) : null}
+        </div>
+        {slotHints.length > 0 ? (
+          <div className="inspector-hint-list">
+            {slotHints.map((hint) => (
+              <div key={hint.title} className="inspector-hint-card">
+                <strong>{hint.title}</strong>
+                <small>{hint.description}</small>
+              </div>
+            ))}
           </div>
         ) : null}
-        {slotNames.length > 0 ? (
-          <div>
-            <span className="field-caption">Slots</span>
-            <strong>{slotNames.join(', ')}</strong>
-            <small>{slotNames.length} available slot{slotNames.length === 1 ? '' : 's'}</small>
-          </div>
-        ) : null}
-      </div>
         <label className="inspector-field">
           <span className="field-caption">Label</span>
           <input
