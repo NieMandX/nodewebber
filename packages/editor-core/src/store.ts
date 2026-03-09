@@ -13,7 +13,7 @@ import {
 } from '@procedural-web-composer/shared-utils'
 import { createStore } from 'zustand/vanilla'
 import type { StoreApi } from 'zustand/vanilla'
-import { createEmptyProjectDocument } from './factories'
+import { createEmptyProjectDocument, createNodeInstance } from './factories'
 
 export interface ConnectNodesInput {
   fromNodeId: string
@@ -37,10 +37,12 @@ export interface EditorState {
   setSelectedGraph: (graphId: string) => void
   selectNode: (nodeId?: string) => void
   addNode: (type: string, position?: NodeInstance['position']) => void
+  duplicateNode: (nodeId: string, position?: NodeInstance['position']) => void
   removeNode: (nodeId: string) => void
   removeEdge: (edgeId: string) => void
   connectNodes: (connection: ConnectNodesInput) => void
   updateNodeParam: (nodeId: string, key: string, value: unknown) => void
+  updateNodeParams: (nodeId: string, params: Record<string, unknown>) => void
   updateNodeLabel: (nodeId: string, label: string) => void
   updateNodePosition: (nodeId: string, position: NodeInstance['position']) => void
   setJsonBuffer: (json: string) => void
@@ -88,8 +90,7 @@ export function createEditorStore(options: {
       set((state) => {
         const project = updateProject(state.project, state.selectedGraphId, (graph) => {
           const nextIndex = graph.nodes.length
-          const node: NodeInstance = {
-            id: createId('node'),
+          const node = createNodeInstance({
             type,
             version: definition.version,
             label: definition.title,
@@ -99,13 +100,51 @@ export function createEditorStore(options: {
                 x: 80 + (nextIndex % 3) * 280,
                 y: 80 + Math.floor(nextIndex / 3) * 180,
               },
-            params: structuredClone(definition.defaultParams),
+            params: definition.defaultParams,
             ui: {
               width: 248,
             },
-          }
+          })
 
           graph.nodes.push(node)
+        })
+
+        if (!project) {
+          return state
+        }
+
+        return {
+          ...state,
+          project,
+          selectedNodeId: getLastNodeId(project, state.selectedGraphId),
+          jsonBuffer: serializeProjectDocument(project),
+          history: pushHistory(state.history, state.project),
+        }
+      })
+    },
+    duplicateNode: (nodeId, position) => {
+      set((state) => {
+        const project = updateProject(state.project, state.selectedGraphId, (graph) => {
+          const sourceNode = graph.nodes.find((node) => node.id === nodeId)
+
+          if (!sourceNode) {
+            return
+          }
+
+          const duplicatedNode = createNodeInstance({
+            type: sourceNode.type,
+            version: sourceNode.version,
+            position:
+              position ?? {
+                x: sourceNode.position.x + 36,
+                y: sourceNode.position.y + 36,
+              },
+            params: sourceNode.params,
+            ...(sourceNode.label ? { label: sourceNode.label } : {}),
+            ...(sourceNode.ui ? { ui: sourceNode.ui } : {}),
+          })
+
+          graph.nodes.push(duplicatedNode)
         })
 
         if (!project) {
@@ -232,6 +271,30 @@ export function createEditorStore(options: {
             ...node.params,
             [key]: value,
           }
+        })
+
+        if (!project) {
+          return state
+        }
+
+        return {
+          ...state,
+          project,
+          jsonBuffer: serializeProjectDocument(project),
+          history: pushHistory(state.history, state.project),
+        }
+      })
+    },
+    updateNodeParams: (nodeId, params) => {
+      set((state) => {
+        const project = updateProject(state.project, state.selectedGraphId, (graph) => {
+          const node = graph.nodes.find((candidate) => candidate.id === nodeId)
+
+          if (!node) {
+            return
+          }
+
+          node.params = structuredClone(params)
         })
 
         if (!project) {

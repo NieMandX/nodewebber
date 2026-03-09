@@ -1,4 +1,4 @@
-export { createEmptyGraphDocument, createEmptyProjectDocument } from './factories'
+export { createEmptyGraphDocument, createEmptyProjectDocument, createNodeInstance } from './factories'
 export {
   createEditorStore,
   getGraphById,

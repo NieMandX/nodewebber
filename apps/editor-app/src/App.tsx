@@ -1,10 +1,14 @@
 import { useState } from 'react'
-import { NodeInspector, NodePalette, EditorCanvas } from '@procedural-web-composer/editor-reactflow'
-import { evaluateGraphDocument } from '@procedural-web-composer/runtime-core'
+import { evaluateGraphDocument, loadProjectDocument } from '@procedural-web-composer/runtime-core'
 import { PreviewRenderer } from '@procedural-web-composer/runtime-react'
 import { useStore } from 'zustand'
-import { editorStore } from './session'
+import { GraphIssuesPanel } from './components/GraphIssuesPanel'
+import { EditorCanvas } from './components/EditorCanvas'
+import { NodeInspector } from './components/NodeInspector'
+import { NodePalette } from './components/NodePalette'
 import { registry } from './registry'
+import { sampleProjects } from './sample-projects'
+import { editorStore } from './session'
 
 export function App(): JSX.Element {
   const project = useStore(editorStore, (state) => state.project)
@@ -15,6 +19,12 @@ export function App(): JSX.Element {
   const [loadError, setLoadError] = useState<string>()
   const selectedGraph = project.graphs.find((graph) => graph.id === selectedGraphId)
   const runtime = evaluateGraphDocument(project, selectedGraphId, registry)
+  const selectedGraphIssues = runtime.validation.issues.filter((issue) =>
+    belongsToGraph(issue.graphId, selectedGraphId),
+  )
+  const selectedGraphRuntimeIssues = runtime.issues.filter((issue) =>
+    belongsToGraph(issue.graphId, selectedGraphId),
+  )
 
   return (
     <div className="editor-shell">
@@ -58,8 +68,12 @@ export function App(): JSX.Element {
           <div className="status-badges">
             <span className="status-badge">{selectedGraph?.nodes.length ?? 0} nodes</span>
             <span className="status-badge">
-              {runtime.validation.issues.length} validation issue
-              {runtime.validation.issues.length === 1 ? '' : 's'}
+              {selectedGraphIssues.length} graph issue
+              {selectedGraphIssues.length === 1 ? '' : 's'}
+            </span>
+            <span className="status-badge">
+              {selectedGraphRuntimeIssues.length} runtime issue
+              {selectedGraphRuntimeIssues.length === 1 ? '' : 's'}
             </span>
           </div>
         </div>
@@ -76,25 +90,25 @@ export function App(): JSX.Element {
       <section className="canvas-panel panel surface-muted">
         <div className="panel-header">
           <h2>Graph Canvas</h2>
-          <p>Connect handles to create structure, data, and style edges.</p>
+          <p>Drag nodes from the palette, wire handles, and inspect warnings live.</p>
         </div>
         <div className="canvas-shell">
-          <EditorCanvas store={editorStore} registry={registry} />
+          <EditorCanvas store={editorStore} registry={registry} issues={selectedGraphIssues} />
         </div>
       </section>
 
       <aside className="inspector-panel panel surface-strong">
         <div className="panel-header">
           <h2>Inspector</h2>
-          <p>Edit params directly against the selected node instance.</p>
+          <p>Edit params, bindings, and selected node metadata.</p>
         </div>
-        <NodeInspector store={editorStore} registry={registry} />
+        <NodeInspector store={editorStore} registry={registry} issues={selectedGraphIssues} />
       </aside>
 
       <section className="json-panel panel surface-strong">
         <div className="panel-header">
           <h2>Project JSON</h2>
-          <p>Save the current document or load a new one into the editor state.</p>
+          <p>Save the current document, load JSON, or switch to a sample project.</p>
         </div>
         <div className="json-actions">
           <button
@@ -118,6 +132,24 @@ export function App(): JSX.Element {
             Load JSON
           </button>
         </div>
+        <div className="sample-projects">
+          <span className="field-caption">Sample projects</span>
+          <div className="sample-actions">
+            {sampleProjects.map((sample) => (
+              <button
+                key={sample.key}
+                type="button"
+                className="button chrome"
+                onClick={() => {
+                  editorStore.getState().loadProject(loadProjectDocument(sample.document))
+                  setLoadError(undefined)
+                }}
+              >
+                {sample.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <textarea
           className="json-textarea"
           value={jsonBuffer}
@@ -134,28 +166,31 @@ export function App(): JSX.Element {
         <div className="preview-shell">
           <PreviewRenderer root={runtime.root} />
         </div>
+        <GraphIssuesPanel
+          graphName={selectedGraph?.name ?? 'Unknown graph'}
+          issues={selectedGraphIssues}
+        />
         <div className="issues-panel">
-          <h3>Issues</h3>
-          {runtime.validation.issues.length === 0 && runtime.issues.length === 0 ? (
-            <p className="muted">No validation or runtime issues.</p>
+          <h3>Runtime Issues</h3>
+          {selectedGraphRuntimeIssues.length === 0 ? (
+            <p className="muted">No runtime issues for the active graph.</p>
           ) : (
-            <>
-              {runtime.validation.issues.map((issue, index) => (
-                <div key={`validation-${index}`} className={`issue-card ${issue.severity}`}>
-                  <strong>{issue.code}</strong>
-                  <span>{issue.message}</span>
-                </div>
-              ))}
-              {runtime.issues.map((issue, index) => (
-                <div key={`runtime-${index}`} className={`issue-card ${issue.severity}`}>
-                  <strong>{issue.code}</strong>
-                  <span>{issue.message}</span>
-                </div>
-              ))}
-            </>
+            selectedGraphRuntimeIssues.map((issue, index) => (
+              <div
+                key={`runtime-${issue.code}-${issue.nodeId ?? 'graph'}-${index}`}
+                className={`issue-card ${issue.severity}`}
+              >
+                <strong>{issue.code}</strong>
+                <span>{issue.message}</span>
+              </div>
+            ))
           )}
         </div>
       </section>
     </div>
   )
+}
+
+function belongsToGraph(issueGraphId: string | undefined, selectedGraphId: string): boolean {
+  return issueGraphId === undefined || issueGraphId === selectedGraphId
 }

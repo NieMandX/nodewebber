@@ -1,0 +1,179 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_landing_hero",
+    "name": "Landing Hero",
+    "createdAt": "2026-03-09T12:15:00.000Z",
+    "updatedAt": "2026-03-09T12:15:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_landing_hero",
+    "themeMode": "light"
+  },
+  "graphs": [
+    {
+      "id": "graph_landing_hero",
+      "name": "Landing Hero",
+      "kind": "page",
+      "viewport": {
+        "x": -180,
+        "y": -100,
+        "zoom": 0.78
+      },
+      "nodes": [
+        {
+          "id": "node_theme_hero",
+          "type": "style.theme",
+          "version": 1,
+          "label": "Theme",
+          "position": { "x": 80, "y": 80 },
+          "params": {
+            "colors": {
+              "background": "#f8f1e8",
+              "surface": "#fff9f2",
+              "text": "#1f1813",
+              "accent": "#bc5f2f"
+            },
+            "typography": {
+              "fontFamily": "\"Space Grotesk\", \"IBM Plex Sans\", sans-serif",
+              "headingScale": 1.22,
+              "bodySize": "1rem"
+            }
+          }
+        },
+        {
+          "id": "node_page_hero",
+          "type": "layout.page",
+          "version": 1,
+          "label": "Page",
+          "position": { "x": 360, "y": 120 },
+          "params": {
+            "maxWidth": 1200,
+            "padding": 40
+          }
+        },
+        {
+          "id": "node_section_hero",
+          "type": "layout.section",
+          "version": 1,
+          "label": "Hero Section",
+          "position": { "x": 660, "y": 120 },
+          "params": {
+            "paddingY": 52,
+            "background": "rgba(255, 255, 255, 0.34)"
+          }
+        },
+        {
+          "id": "node_stack_hero",
+          "type": "layout.stack",
+          "version": 1,
+          "label": "Hero Stack",
+          "position": { "x": 960, "y": 120 },
+          "params": {
+            "direction": "column",
+            "gap": 20,
+            "align": "stretch"
+          }
+        },
+        {
+          "id": "node_heading_hero",
+          "type": "content.heading",
+          "version": 1,
+          "label": "Hero Title",
+          "position": { "x": 1260, "y": 20 },
+          "params": {
+            "text": "Compose bold landing pages with a procedural graph",
+            "level": 1,
+            "align": "left"
+          }
+        },
+        {
+          "id": "node_text_hero",
+          "type": "content.text",
+          "version": 1,
+          "label": "Hero Copy",
+          "position": { "x": 1260, "y": 200 },
+          "params": {
+            "text": "Use layout, content, and style nodes to describe a page, validate it, evaluate it, and preview the resulting UI tree."
+          }
+        },
+        {
+          "id": "node_button_hero",
+          "type": "content.button",
+          "version": 1,
+          "label": "Hero CTA",
+          "position": { "x": 1260, "y": 380 },
+          "params": {
+            "label": "Inspect the canvas",
+            "href": "#canvas",
+            "variant": "ghost"
+          }
+        },
+        {
+          "id": "node_image_hero",
+          "type": "content.image",
+          "version": 1,
+          "label": "Hero Image",
+          "position": { "x": 1260, "y": 560 },
+          "params": {
+            "src": "data:image/svg+xml;utf8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22720%22 height=%22480%22 viewBox=%220 0 720 480%22%3E%3Crect width=%22720%22 height=%22480%22 rx=%2232%22 fill=%22%23ead6bf%22/%3E%3Crect x=%2264%22 y=%2272%22 width=%22592%22 height=%22336%22 rx=%2222%22 fill=%22%23fff6ec%22 stroke=%22%23c96f36%22 stroke-width=%226%22/%3E%3Ccircle cx=%22164%22 cy=%22144%22 r=%2242%22 fill=%22%23c96f36%22 opacity=%220.85%22/%3E%3Cpath d=%22M126 332h468M126 282h286M126 232h332%22 stroke=%22%23221915%22 stroke-width=%2214%22 stroke-linecap=%22round%22 opacity=%220.72%22/%3E%3Cpath d=%22M434 338l72-92 84 68 62-84%22 fill=%22none%22 stroke=%22%238b5a37%22 stroke-width=%2218%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/%3E%3C/svg%3E",
+            "alt": "Hero illustration for the procedural web composer",
+            "fit": "cover",
+            "height": 280
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_hero_theme_page",
+          "from": { "nodeId": "node_theme_hero", "port": "theme" },
+          "to": { "nodeId": "node_page_hero", "port": "theme" },
+          "kind": "style"
+        },
+        {
+          "id": "edge_hero_page_section",
+          "from": { "nodeId": "node_page_hero", "port": "ui" },
+          "to": { "nodeId": "node_section_hero", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_hero_section_stack",
+          "from": { "nodeId": "node_section_hero", "port": "ui" },
+          "to": { "nodeId": "node_stack_hero", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_hero_stack_heading",
+          "from": { "nodeId": "node_stack_hero", "port": "ui" },
+          "to": { "nodeId": "node_heading_hero", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_hero_stack_text",
+          "from": { "nodeId": "node_stack_hero", "port": "ui" },
+          "to": { "nodeId": "node_text_hero", "port": "parent" },
+          "kind": "structure",
+          "order": 1
+        },
+        {
+          "id": "edge_hero_stack_button",
+          "from": { "nodeId": "node_stack_hero", "port": "ui" },
+          "to": { "nodeId": "node_button_hero", "port": "parent" },
+          "kind": "structure",
+          "order": 2
+        },
+        {
+          "id": "edge_hero_stack_image",
+          "from": { "nodeId": "node_stack_hero", "port": "ui" },
+          "to": { "nodeId": "node_image_hero", "port": "parent" },
+          "kind": "structure",
+          "order": 3
+        }
+      ]
+    }
+  ],
+  "assets": []
+}

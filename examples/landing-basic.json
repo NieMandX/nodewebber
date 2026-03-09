@@ -1,0 +1,159 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_landing_basic",
+    "name": "Landing Basic",
+    "createdAt": "2026-03-09T12:00:00.000Z",
+    "updatedAt": "2026-03-09T12:00:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_landing_basic",
+    "themeMode": "light"
+  },
+  "graphs": [
+    {
+      "id": "graph_landing_basic",
+      "name": "Landing Basic",
+      "kind": "page",
+      "viewport": {
+        "x": -120,
+        "y": -60,
+        "zoom": 0.86
+      },
+      "nodes": [
+        {
+          "id": "node_theme_basic",
+          "type": "style.theme",
+          "version": 1,
+          "label": "Theme",
+          "position": { "x": 80, "y": 80 },
+          "params": {
+            "colors": {
+              "background": "#f4efe6",
+              "surface": "#fffaf2",
+              "text": "#201813",
+              "accent": "#d0672d"
+            },
+            "typography": {
+              "fontFamily": "\"Space Grotesk\", \"IBM Plex Sans\", sans-serif",
+              "headingScale": 1.16,
+              "bodySize": "1rem"
+            }
+          }
+        },
+        {
+          "id": "node_page_basic",
+          "type": "layout.page",
+          "version": 1,
+          "label": "Page",
+          "position": { "x": 360, "y": 120 },
+          "params": {
+            "maxWidth": 1080,
+            "padding": 36
+          }
+        },
+        {
+          "id": "node_section_basic",
+          "type": "layout.section",
+          "version": 1,
+          "label": "Intro Section",
+          "position": { "x": 660, "y": 120 },
+          "params": {
+            "paddingY": 36,
+            "background": "rgba(255,255,255,0.42)"
+          }
+        },
+        {
+          "id": "node_stack_basic",
+          "type": "layout.stack",
+          "version": 1,
+          "label": "Intro Stack",
+          "position": { "x": 960, "y": 120 },
+          "params": {
+            "direction": "column",
+            "gap": 16,
+            "align": "stretch"
+          }
+        },
+        {
+          "id": "node_heading_basic",
+          "type": "content.heading",
+          "version": 1,
+          "label": "Headline",
+          "position": { "x": 1260, "y": 40 },
+          "params": {
+            "text": "Shape web pages through a graph",
+            "level": 1,
+            "align": "left"
+          }
+        },
+        {
+          "id": "node_text_basic",
+          "type": "content.text",
+          "version": 1,
+          "label": "Body",
+          "position": { "x": 1260, "y": 220 },
+          "params": {
+            "text": "Connect layout, style, and content nodes into an evaluated UI tree with a live React preview."
+          }
+        },
+        {
+          "id": "node_button_basic",
+          "type": "content.button",
+          "version": 1,
+          "label": "Primary CTA",
+          "position": { "x": 1260, "y": 400 },
+          "params": {
+            "label": "Open the editor",
+            "href": "#editor",
+            "variant": "solid"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_basic_theme_page",
+          "from": { "nodeId": "node_theme_basic", "port": "theme" },
+          "to": { "nodeId": "node_page_basic", "port": "theme" },
+          "kind": "style"
+        },
+        {
+          "id": "edge_basic_page_section",
+          "from": { "nodeId": "node_page_basic", "port": "ui" },
+          "to": { "nodeId": "node_section_basic", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_basic_section_stack",
+          "from": { "nodeId": "node_section_basic", "port": "ui" },
+          "to": { "nodeId": "node_stack_basic", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_basic_stack_heading",
+          "from": { "nodeId": "node_stack_basic", "port": "ui" },
+          "to": { "nodeId": "node_heading_basic", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_basic_stack_text",
+          "from": { "nodeId": "node_stack_basic", "port": "ui" },
+          "to": { "nodeId": "node_text_basic", "port": "parent" },
+          "kind": "structure",
+          "order": 1
+        },
+        {
+          "id": "edge_basic_stack_button",
+          "from": { "nodeId": "node_stack_basic", "port": "ui" },
+          "to": { "nodeId": "node_button_basic", "port": "parent" },
+          "kind": "structure",
+          "order": 2
+        }
+      ]
+    }
+  ],
+  "assets": []
+}
