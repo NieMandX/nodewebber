@@ -1,0 +1,213 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_viewer_variants",
+    "name": "Viewer Variants",
+    "createdAt": "2026-03-09T19:10:00.000Z",
+    "updatedAt": "2026-03-09T19:10:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_viewer_variants_page",
+    "themeMode": "light"
+  },
+  "graphs": [
+    {
+      "id": "graph_viewer_variants_page",
+      "name": "Viewer Variants Page",
+      "kind": "page",
+      "viewport": {
+        "x": -160,
+        "y": -120,
+        "zoom": 0.74
+      },
+      "nodes": [
+        {
+          "id": "node_variants_theme",
+          "type": "style.theme",
+          "version": 1,
+          "label": "Theme",
+          "position": { "x": 40, "y": 80 },
+          "params": {
+            "colors": {
+              "background": "#f8f6f1",
+              "surface": "#fffcf6",
+              "text": "#1d1712",
+              "accent": "#2e6ee5"
+            },
+            "typography": {
+              "fontFamily": "\"Space Grotesk\", \"IBM Plex Sans\", sans-serif",
+              "headingScale": 1.14,
+              "bodySize": "1rem"
+            }
+          }
+        },
+        {
+          "id": "node_variants_page",
+          "type": "layout.page",
+          "version": 1,
+          "label": "Page",
+          "position": { "x": 280, "y": 120 },
+          "params": {
+            "maxWidth": 1120,
+            "padding": 36
+          }
+        },
+        {
+          "id": "node_variants_model",
+          "type": "viewer.model",
+          "version": 1,
+          "label": "Model",
+          "position": { "x": 560, "y": 20 },
+          "params": {
+            "src": "/models/lamp.glb",
+            "format": "glb",
+            "alt": "Lamp model"
+          }
+        },
+        {
+          "id": "node_variants_environment",
+          "type": "viewer.environment",
+          "version": 1,
+          "label": "Environment",
+          "position": { "x": 560, "y": 200 },
+          "params": {
+            "type": "color",
+            "color": "#162032",
+            "intensity": 1,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "node_variants_day",
+          "type": "viewer.variant",
+          "version": 1,
+          "label": "Day Variant",
+          "position": { "x": 860, "y": 0 },
+          "params": {
+            "id": "day",
+            "label": "Daylight",
+            "modelSrc": "/models/lamp.glb",
+            "environmentOverride": {
+              "type": "color",
+              "color": "#24364f",
+              "intensity": 1
+            }
+          }
+        },
+        {
+          "id": "node_variants_night",
+          "type": "viewer.variant",
+          "version": 1,
+          "label": "Night Variant",
+          "position": { "x": 860, "y": 180 },
+          "params": {
+            "id": "night",
+            "label": "Night Edition",
+            "modelSrc": "/models/lamp-night.glb",
+            "environmentOverride": {
+              "type": "color",
+              "color": "#0a1018",
+              "intensity": 0.72
+            }
+          }
+        },
+        {
+          "id": "node_variants_studio",
+          "type": "viewer.variant",
+          "version": 1,
+          "label": "Studio Variant",
+          "position": { "x": 860, "y": 360 },
+          "params": {
+            "id": "studio",
+            "label": "Studio White",
+            "modelSrc": "/models/lamp-studio.glb",
+            "environmentOverride": {
+              "type": "color",
+              "color": "#dbe6f5",
+              "intensity": 1.2
+            }
+          }
+        },
+        {
+          "id": "node_variants_group",
+          "type": "viewer.variants",
+          "version": 1,
+          "label": "Variants",
+          "position": { "x": 1140, "y": 180 },
+          "params": {}
+        },
+        {
+          "id": "node_variants_block",
+          "type": "viewer.block",
+          "version": 1,
+          "label": "Viewer",
+          "position": { "x": 1420, "y": 140 },
+          "params": {
+            "title": "Lamp Viewer",
+            "description": "Variant configs override the base model source and environment.",
+            "showToolbar": true,
+            "allowOrbit": true,
+            "loadingMode": "lazy",
+            "background": "#101826",
+            "exposure": 1,
+            "activeVariantId": "day",
+            "interactionsEnabled": true,
+            "stateTransitionMode": "instant"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_variants_theme_page",
+          "from": { "nodeId": "node_variants_theme", "port": "theme" },
+          "to": { "nodeId": "node_variants_page", "port": "theme" },
+          "kind": "style"
+        },
+        {
+          "id": "edge_variants_page_block",
+          "from": { "nodeId": "node_variants_page", "port": "ui" },
+          "to": { "nodeId": "node_variants_block", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_variants_model_block",
+          "from": { "nodeId": "node_variants_model", "port": "model" },
+          "to": { "nodeId": "node_variants_block", "port": "model" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_variants_environment_block",
+          "from": { "nodeId": "node_variants_environment", "port": "environment" },
+          "to": { "nodeId": "node_variants_block", "port": "environment" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_variants_day_group",
+          "from": { "nodeId": "node_variants_day", "port": "variant" },
+          "to": { "nodeId": "node_variants_group", "port": "variants" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_variants_night_group",
+          "from": { "nodeId": "node_variants_night", "port": "variant" },
+          "to": { "nodeId": "node_variants_group", "port": "variants" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_variants_studio_group",
+          "from": { "nodeId": "node_variants_studio", "port": "variant" },
+          "to": { "nodeId": "node_variants_group", "port": "variants" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_variants_group_block",
+          "from": { "nodeId": "node_variants_group", "port": "variants" },
+          "to": { "nodeId": "node_variants_block", "port": "variants" },
+          "kind": "data"
+        }
+      ]
+    }
+  ],
+  "assets": []
+}

@@ -1,0 +1,288 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_viewer_state_subgraph",
+    "name": "Viewer State Subgraph",
+    "createdAt": "2026-03-09T19:15:00.000Z",
+    "updatedAt": "2026-03-09T19:15:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_viewer_state_subgraph_page",
+    "themeMode": "light"
+  },
+  "graphs": [
+    {
+      "id": "graph_viewer_state_subgraph_page",
+      "name": "Viewer State Subgraph Page",
+      "kind": "page",
+      "viewport": {
+        "x": -120,
+        "y": -80,
+        "zoom": 0.82
+      },
+      "nodes": [
+        {
+          "id": "node_state_subgraph_theme",
+          "type": "style.theme",
+          "version": 1,
+          "label": "Theme",
+          "position": { "x": 60, "y": 80 },
+          "params": {
+            "colors": {
+              "background": "#f4efe7",
+              "surface": "#fffaf4",
+              "text": "#241b16",
+              "accent": "#4772eb"
+            },
+            "typography": {
+              "fontFamily": "\"Space Grotesk\", \"IBM Plex Sans\", sans-serif",
+              "headingScale": 1.16,
+              "bodySize": "1rem"
+            }
+          }
+        },
+        {
+          "id": "node_state_subgraph_page",
+          "type": "layout.page",
+          "version": 1,
+          "label": "Page",
+          "position": { "x": 300, "y": 120 },
+          "params": {
+            "maxWidth": 1120,
+            "padding": 36
+          }
+        },
+        {
+          "id": "node_state_subgraph_instance",
+          "type": "subgraph.instance",
+          "version": 1,
+          "label": "Viewer Panel",
+          "position": { "x": 620, "y": 120 },
+          "params": {
+            "subgraphGraphId": "graph_stateful_viewer_panel",
+            "title": "Adaptive Viewer",
+            "model": {
+              "src": "/models/table.glb",
+              "format": "glb",
+              "alt": "Table model"
+            }
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_state_subgraph_theme_page",
+          "from": { "nodeId": "node_state_subgraph_theme", "port": "theme" },
+          "to": { "nodeId": "node_state_subgraph_page", "port": "theme" },
+          "kind": "style"
+        },
+        {
+          "id": "edge_state_subgraph_page_instance",
+          "from": { "nodeId": "node_state_subgraph_page", "port": "ui" },
+          "to": { "nodeId": "node_state_subgraph_instance", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "graph_stateful_viewer_panel",
+      "name": "Stateful Viewer Panel",
+      "kind": "subgraph",
+      "subgraph": {
+        "publicParamsSchema": {
+          "title": { "type": "string" },
+          "model": { "type": "json" }
+        },
+        "publicDefaultParams": {
+          "title": "Adaptive Viewer",
+          "model": {
+            "src": "/models/table.glb",
+            "format": "glb",
+            "alt": "Table model"
+          }
+        },
+        "publicSlots": ["children"]
+      },
+      "viewport": {
+        "x": -160,
+        "y": -40,
+        "zoom": 0.74
+      },
+      "nodes": [
+        {
+          "id": "node_stateful_panel_section",
+          "type": "layout.section",
+          "version": 1,
+          "label": "Section",
+          "position": { "x": 360, "y": 160 },
+          "params": {
+            "paddingY": 24,
+            "background": "#ffffff"
+          }
+        },
+        {
+          "id": "node_stateful_panel_stack",
+          "type": "layout.stack",
+          "version": 1,
+          "label": "Stack",
+          "position": { "x": 640, "y": 160 },
+          "params": {
+            "direction": "column",
+            "gap": 16,
+            "align": "stretch"
+          }
+        },
+        {
+          "id": "node_stateful_panel_title",
+          "type": "content.heading",
+          "version": 1,
+          "label": "Title",
+          "position": { "x": 940, "y": 20 },
+          "params": {
+            "text": "Adaptive Viewer",
+            "level": 2,
+            "align": "left"
+          }
+        },
+        {
+          "id": "node_stateful_panel_viewer",
+          "type": "viewer.block",
+          "version": 1,
+          "label": "Viewer",
+          "position": { "x": 940, "y": 240 },
+          "params": {
+            "title": "Adaptive Viewer",
+            "description": "States stay serializable even when the viewer lives inside a subgraph.",
+            "showToolbar": true,
+            "allowOrbit": true,
+            "loadingMode": "lazy",
+            "background": "#101826",
+            "initialStateId": "default",
+            "interactionsEnabled": true,
+            "stateTransitionMode": "soft"
+          }
+        },
+        {
+          "id": "node_stateful_panel_param_title",
+          "type": "subgraph.param",
+          "version": 1,
+          "label": "title",
+          "position": { "x": 80, "y": 20 },
+          "params": {
+            "key": "title",
+            "fallbackValue": "Adaptive Viewer"
+          }
+        },
+        {
+          "id": "node_stateful_panel_param_model",
+          "type": "subgraph.param",
+          "version": 1,
+          "label": "model",
+          "position": { "x": 80, "y": 240 },
+          "params": {
+            "key": "model",
+            "fallbackValue": {
+              "src": "/models/table.glb",
+              "format": "glb",
+              "alt": "Table model"
+            }
+          }
+        },
+        {
+          "id": "node_stateful_panel_state_default",
+          "type": "viewer.state",
+          "version": 1,
+          "label": "Default",
+          "position": { "x": 640, "y": 420 },
+          "params": {
+            "id": "default",
+            "label": "Overview",
+            "titleOverride": "Adaptive Viewer"
+          }
+        },
+        {
+          "id": "node_stateful_panel_state_material",
+          "type": "viewer.state",
+          "version": 1,
+          "label": "Material",
+          "position": { "x": 640, "y": 600 },
+          "params": {
+            "id": "material",
+            "label": "Material Pass",
+            "camera": {
+              "mode": "fixed",
+              "position": { "x": 1.3, "y": 1.1, "z": 1.5 },
+              "target": { "x": 0.1, "y": 0.65, "z": 0.1 },
+              "fov": 28
+            },
+            "titleOverride": "Material Focus",
+            "descriptionOverride": "Subgraph-local state overrides still feed the same viewer renderer."
+          }
+        },
+        {
+          "id": "node_stateful_panel_states",
+          "type": "viewer.states",
+          "version": 1,
+          "label": "States",
+          "position": { "x": 940, "y": 520 },
+          "params": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_stateful_panel_section_stack",
+          "from": { "nodeId": "node_stateful_panel_section", "port": "ui" },
+          "to": { "nodeId": "node_stateful_panel_stack", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_stateful_panel_stack_title",
+          "from": { "nodeId": "node_stateful_panel_stack", "port": "ui" },
+          "to": { "nodeId": "node_stateful_panel_title", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_stateful_panel_stack_viewer",
+          "from": { "nodeId": "node_stateful_panel_stack", "port": "ui" },
+          "to": { "nodeId": "node_stateful_panel_viewer", "port": "parent" },
+          "kind": "structure",
+          "order": 1
+        },
+        {
+          "id": "edge_stateful_panel_param_title",
+          "from": { "nodeId": "node_stateful_panel_param_title", "port": "value" },
+          "to": { "nodeId": "node_stateful_panel_title", "port": "text" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_stateful_panel_param_model",
+          "from": { "nodeId": "node_stateful_panel_param_model", "port": "value" },
+          "to": { "nodeId": "node_stateful_panel_viewer", "port": "model" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_stateful_panel_state_default_group",
+          "from": { "nodeId": "node_stateful_panel_state_default", "port": "sceneState" },
+          "to": { "nodeId": "node_stateful_panel_states", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_stateful_panel_state_material_group",
+          "from": { "nodeId": "node_stateful_panel_state_material", "port": "sceneState" },
+          "to": { "nodeId": "node_stateful_panel_states", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_stateful_panel_states_viewer",
+          "from": { "nodeId": "node_stateful_panel_states", "port": "states" },
+          "to": { "nodeId": "node_stateful_panel_viewer", "port": "states" },
+          "kind": "data"
+        }
+      ]
+    }
+  ],
+  "assets": []
+}

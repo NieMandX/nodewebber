@@ -1,0 +1,214 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_viewer_scene_states",
+    "name": "Viewer Scene States",
+    "createdAt": "2026-03-09T19:00:00.000Z",
+    "updatedAt": "2026-03-09T19:00:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_viewer_scene_states_page",
+    "themeMode": "light"
+  },
+  "graphs": [
+    {
+      "id": "graph_viewer_scene_states_page",
+      "name": "Viewer Scene States Page",
+      "kind": "page",
+      "viewport": {
+        "x": -160,
+        "y": -120,
+        "zoom": 0.72
+      },
+      "nodes": [
+        {
+          "id": "node_scene_states_theme",
+          "type": "style.theme",
+          "version": 1,
+          "label": "Theme",
+          "position": { "x": 40, "y": 80 },
+          "params": {
+            "colors": {
+              "background": "#f4f1ec",
+              "surface": "#fffaf6",
+              "text": "#201a15",
+              "accent": "#5a7df0"
+            },
+            "typography": {
+              "fontFamily": "\"Space Grotesk\", \"IBM Plex Sans\", sans-serif",
+              "headingScale": 1.16,
+              "bodySize": "1rem"
+            }
+          }
+        },
+        {
+          "id": "node_scene_states_page",
+          "type": "layout.page",
+          "version": 1,
+          "label": "Page",
+          "position": { "x": 280, "y": 100 },
+          "params": {
+            "maxWidth": 1120,
+            "padding": 36
+          }
+        },
+        {
+          "id": "node_scene_states_model",
+          "type": "viewer.model",
+          "version": 1,
+          "label": "Model",
+          "position": { "x": 560, "y": 0 },
+          "params": {
+            "src": "/models/chair.glb",
+            "format": "glb",
+            "alt": "Chair model"
+          }
+        },
+        {
+          "id": "node_scene_states_environment",
+          "type": "viewer.environment",
+          "version": 1,
+          "label": "Environment",
+          "position": { "x": 560, "y": 180 },
+          "params": {
+            "type": "color",
+            "color": "#0f1724",
+            "intensity": 1.05,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "node_scene_states_camera",
+          "type": "viewer.cameraPreset",
+          "version": 1,
+          "label": "Camera",
+          "position": { "x": 560, "y": 360 },
+          "params": {
+            "mode": "orbit",
+            "position": { "x": 2.8, "y": 1.5, "z": 3.8 },
+            "target": { "x": 0, "y": 0.5, "z": 0 },
+            "fov": 38,
+            "minDistance": 1.5,
+            "maxDistance": 6
+          }
+        },
+        {
+          "id": "node_scene_state_default",
+          "type": "viewer.state",
+          "version": 1,
+          "label": "Default",
+          "position": { "x": 860, "y": 0 },
+          "params": {
+            "id": "default",
+            "label": "Default",
+            "titleOverride": "Atlas Lounge Chair",
+            "descriptionOverride": "Base composition with a neutral camera and soft showroom light."
+          }
+        },
+        {
+          "id": "node_scene_state_detail",
+          "type": "viewer.state",
+          "version": 1,
+          "label": "Detail",
+          "position": { "x": 860, "y": 180 },
+          "params": {
+            "id": "detail",
+            "label": "Detail Focus",
+            "camera": {
+              "mode": "fixed",
+              "position": { "x": 1.1, "y": 0.9, "z": 1.4 },
+              "target": { "x": 0, "y": 0.55, "z": 0.1 },
+              "fov": 24
+            },
+            "environment": {
+              "type": "color",
+              "color": "#1f2937",
+              "intensity": 0.88
+            },
+            "titleOverride": "Joinery Detail",
+            "descriptionOverride": "A closer scene state that shifts the camera and light to inspect materials."
+          }
+        },
+        {
+          "id": "node_scene_states_group",
+          "type": "viewer.states",
+          "version": 1,
+          "label": "States",
+          "position": { "x": 1140, "y": 90 },
+          "params": {}
+        },
+        {
+          "id": "node_scene_states_block",
+          "type": "viewer.block",
+          "version": 1,
+          "label": "Viewer",
+          "position": { "x": 1420, "y": 120 },
+          "params": {
+            "title": "Atlas Viewer",
+            "description": "Scene states are resolved locally in the preview renderer.",
+            "showToolbar": true,
+            "allowOrbit": true,
+            "loadingMode": "lazy",
+            "background": "#111b2d",
+            "exposure": 1.05,
+            "initialStateId": "default",
+            "interactionsEnabled": true,
+            "stateTransitionMode": "soft"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_scene_states_theme_page",
+          "from": { "nodeId": "node_scene_states_theme", "port": "theme" },
+          "to": { "nodeId": "node_scene_states_page", "port": "theme" },
+          "kind": "style"
+        },
+        {
+          "id": "edge_scene_states_page_block",
+          "from": { "nodeId": "node_scene_states_page", "port": "ui" },
+          "to": { "nodeId": "node_scene_states_block", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_scene_states_model_block",
+          "from": { "nodeId": "node_scene_states_model", "port": "model" },
+          "to": { "nodeId": "node_scene_states_block", "port": "model" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_scene_states_environment_block",
+          "from": { "nodeId": "node_scene_states_environment", "port": "environment" },
+          "to": { "nodeId": "node_scene_states_block", "port": "environment" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_scene_states_camera_block",
+          "from": { "nodeId": "node_scene_states_camera", "port": "camera" },
+          "to": { "nodeId": "node_scene_states_block", "port": "camera" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_scene_state_default_group",
+          "from": { "nodeId": "node_scene_state_default", "port": "sceneState" },
+          "to": { "nodeId": "node_scene_states_group", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_scene_state_detail_group",
+          "from": { "nodeId": "node_scene_state_detail", "port": "sceneState" },
+          "to": { "nodeId": "node_scene_states_group", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_scene_states_group_block",
+          "from": { "nodeId": "node_scene_states_group", "port": "states" },
+          "to": { "nodeId": "node_scene_states_block", "port": "states" },
+          "kind": "data"
+        }
+      ]
+    }
+  ],
+  "assets": []
+}

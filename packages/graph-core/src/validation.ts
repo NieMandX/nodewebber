@@ -7,6 +7,7 @@ import type {
   PortDefinition,
   ProjectDocument,
   ValueType,
+  ViewerActionConfig,
 } from '@procedural-web-composer/shared-types'
 import { detectCycles } from './algorithms'
 import { analyzeGraphDiagnostics } from './diagnostics'
@@ -355,6 +356,7 @@ function validateGraphSemantics(
 ): GraphIssue[] {
   const diagnostics = analyzeGraphDiagnostics(graph, registry)
   const issues: GraphIssue[] = []
+  const nodesById = new Map(graph.nodes.map((node) => [node.id, node]))
 
   if (graph.kind === 'page') {
     if (diagnostics.missingPageNode) {
@@ -586,6 +588,100 @@ function validateGraphSemantics(
           nodeId: node.id,
         })
       }
+
+      const stateReferences = collectViewerStateReferences(graph, nodesById, node)
+      const variantReferences = collectViewerVariantReferences(graph, nodesById, node)
+      const hotspotReferences = collectViewerHotspotReferences(graph, nodesById, node)
+      const knownStateIds = new Set(
+        stateReferences
+          .map((stateReference) => stateReference.id)
+          .filter((stateId): stateId is string => Boolean(stateId)),
+      )
+      const knownVariantIds = new Set(
+        variantReferences
+          .map((variantReference) => variantReference.id)
+          .filter((variantId): variantId is string => Boolean(variantId)),
+      )
+      const knownHotspotIds = new Set(
+        hotspotReferences
+          .map((hotspotReference) => hotspotReference.id)
+          .filter((hotspotId): hotspotId is string => Boolean(hotspotId)),
+      )
+      const interactionsEnabled = resolveViewerInteractionsEnabled(graph, nodesById, node)
+      const hasInteractiveHotspots = hotspotReferences.some(
+        (hotspotReference) =>
+          Boolean(hotspotReference.linkedStateId) || Boolean(hotspotReference.action),
+      )
+
+      if (!interactionsEnabled && hasInteractiveHotspots) {
+        issues.push({
+          code: 'viewer_interactions_disabled',
+          message: `Viewer block "${node.id}" has interactions disabled while hotspots still declare actions.`,
+          severity: 'warning',
+          graphId: graph.id,
+          nodeId: node.id,
+        })
+      }
+
+      for (const hotspotReference of hotspotReferences) {
+        if (
+          hotspotReference.linkedStateId &&
+          !knownStateIds.has(hotspotReference.linkedStateId)
+        ) {
+          issues.push({
+            code: 'viewer_hotspot_linked_state_missing',
+            message: `Viewer hotspot "${hotspotReference.sourceNodeId}" references unknown state "${hotspotReference.linkedStateId}".`,
+            severity: 'warning',
+            graphId: graph.id,
+            nodeId: hotspotReference.sourceNodeId,
+          })
+        }
+
+        const action = hotspotReference.action
+
+        if (!action) {
+          continue
+        }
+
+        if (
+          (action.type === 'setState' || action.type === 'focusCamera') &&
+          (!action.stateId || !knownStateIds.has(action.stateId))
+        ) {
+          issues.push({
+            code: 'viewer_action_state_unknown',
+            message: `Viewer action "${hotspotReference.actionSourceNodeId ?? hotspotReference.sourceNodeId}" references unknown state "${action.stateId ?? ''}".`,
+            severity: 'warning',
+            graphId: graph.id,
+            nodeId: hotspotReference.actionSourceNodeId ?? hotspotReference.sourceNodeId,
+          })
+        }
+
+        if (
+          action.type === 'setVariant' &&
+          (!action.variantId || !knownVariantIds.has(action.variantId))
+        ) {
+          issues.push({
+            code: 'viewer_action_variant_unknown',
+            message: `Viewer action "${hotspotReference.actionSourceNodeId ?? hotspotReference.sourceNodeId}" references unknown variant "${action.variantId ?? ''}".`,
+            severity: 'warning',
+            graphId: graph.id,
+            nodeId: hotspotReference.actionSourceNodeId ?? hotspotReference.sourceNodeId,
+          })
+        }
+
+        if (
+          action.type === 'showHotspot' &&
+          (!action.hotspotId || !knownHotspotIds.has(action.hotspotId))
+        ) {
+          issues.push({
+            code: 'viewer_action_hotspot_unknown',
+            message: `Viewer action "${hotspotReference.actionSourceNodeId ?? hotspotReference.sourceNodeId}" references unknown hotspot "${action.hotspotId ?? ''}".`,
+            severity: 'warning',
+            graphId: graph.id,
+            nodeId: hotspotReference.actionSourceNodeId ?? hotspotReference.sourceNodeId,
+          })
+        }
+      }
     }
 
     if (node.type === 'viewer.model') {
@@ -650,6 +746,42 @@ function validateGraphSemantics(
         issues.push({
           code: 'viewer_hotspots_empty',
           message: `Viewer hotspots node "${node.id}" has no hotspot inputs connected.`,
+          severity: 'warning',
+          graphId: graph.id,
+          nodeId: node.id,
+        })
+      }
+    }
+
+    if (node.type === 'viewer.states') {
+      const duplicateIds = getDuplicateViewerIds(
+        collectViewerStateReferencesFromAggregator(graph, nodesById, node.id).map(
+          (stateReference) => stateReference.id,
+        ),
+      )
+
+      if (duplicateIds.length > 0) {
+        issues.push({
+          code: 'viewer_state_duplicate_id',
+          message: `Viewer states node "${node.id}" declares duplicate state ids: ${duplicateIds.join(', ')}.`,
+          severity: 'warning',
+          graphId: graph.id,
+          nodeId: node.id,
+        })
+      }
+    }
+
+    if (node.type === 'viewer.variants') {
+      const duplicateIds = getDuplicateViewerIds(
+        collectViewerVariantReferencesFromAggregator(graph, nodesById, node.id).map(
+          (variantReference) => variantReference.id,
+        ),
+      )
+
+      if (duplicateIds.length > 0) {
+        issues.push({
+          code: 'viewer_variant_duplicate_id',
+          message: `Viewer variants node "${node.id}" declares duplicate variant ids: ${duplicateIds.join(', ')}.`,
           severity: 'warning',
           graphId: graph.id,
           nodeId: node.id,
@@ -756,6 +888,377 @@ function getSupportedSlotsForNode(
   }
 
   return sourceDefinition.slots?.length ? sourceDefinition.slots : ['children']
+}
+
+interface ViewerStateReference {
+  id?: string
+  sourceNodeId: string
+}
+
+interface ViewerVariantReference {
+  id?: string
+  sourceNodeId: string
+}
+
+interface ViewerHotspotReference {
+  id?: string
+  sourceNodeId: string
+  linkedStateId?: string
+  action?: ViewerActionConfig
+  actionSourceNodeId?: string
+}
+
+function collectViewerStateReferences(
+  graph: GraphDocument,
+  nodesById: Map<string, { type: string; params: Record<string, unknown>; id: string }>,
+  viewerBlockNode: { id: string; params: Record<string, unknown> },
+): ViewerStateReference[] {
+  const references = collectViewerStateReferencesFromArray(viewerBlockNode.params.states, viewerBlockNode.id)
+
+  for (const edge of graph.edges.filter(
+    (candidate) =>
+      candidate.kind === 'data' &&
+      candidate.to.nodeId === viewerBlockNode.id &&
+      candidate.to.port === 'states',
+  )) {
+    const sourceNode = nodesById.get(edge.from.nodeId)
+
+    if (sourceNode?.type === 'viewer.states') {
+      references.push(...collectViewerStateReferencesFromAggregator(graph, nodesById, sourceNode.id))
+    }
+  }
+
+  return references
+}
+
+function collectViewerStateReferencesFromAggregator(
+  graph: GraphDocument,
+  nodesById: Map<string, { type: string; params: Record<string, unknown>; id: string }>,
+  aggregatorNodeId: string,
+): ViewerStateReference[] {
+  const references: ViewerStateReference[] = []
+
+  for (const edge of graph.edges.filter(
+    (candidate) =>
+      candidate.kind === 'data' &&
+      candidate.to.nodeId === aggregatorNodeId &&
+      candidate.to.port === 'states',
+  )) {
+    const sourceNode = nodesById.get(edge.from.nodeId)
+
+    if (sourceNode?.type === 'viewer.state') {
+      references.push({
+        id: readViewerString(sourceNode.params.id) ?? sourceNode.id,
+        sourceNodeId: sourceNode.id,
+      })
+    }
+  }
+
+  return references
+}
+
+function collectViewerStateReferencesFromArray(
+  value: unknown,
+  sourceNodeId: string,
+): ViewerStateReference[] {
+  return Array.isArray(value)
+    ? value
+        .map((item) => asRecord(item))
+        .filter((item): item is Record<string, unknown> => Boolean(item))
+        .map((item, index) => ({
+          id: readViewerString(item.id) ?? `state-${index + 1}`,
+          sourceNodeId,
+        }))
+    : []
+}
+
+function collectViewerVariantReferences(
+  graph: GraphDocument,
+  nodesById: Map<string, { type: string; params: Record<string, unknown>; id: string }>,
+  viewerBlockNode: { id: string; params: Record<string, unknown> },
+): ViewerVariantReference[] {
+  const references = collectViewerVariantReferencesFromArray(
+    viewerBlockNode.params.variants,
+    viewerBlockNode.id,
+  )
+
+  for (const edge of graph.edges.filter(
+    (candidate) =>
+      candidate.kind === 'data' &&
+      candidate.to.nodeId === viewerBlockNode.id &&
+      candidate.to.port === 'variants',
+  )) {
+    const sourceNode = nodesById.get(edge.from.nodeId)
+
+    if (sourceNode?.type === 'viewer.variants') {
+      references.push(...collectViewerVariantReferencesFromAggregator(graph, nodesById, sourceNode.id))
+    }
+  }
+
+  return references
+}
+
+function collectViewerVariantReferencesFromAggregator(
+  graph: GraphDocument,
+  nodesById: Map<string, { type: string; params: Record<string, unknown>; id: string }>,
+  aggregatorNodeId: string,
+): ViewerVariantReference[] {
+  const references: ViewerVariantReference[] = []
+
+  for (const edge of graph.edges.filter(
+    (candidate) =>
+      candidate.kind === 'data' &&
+      candidate.to.nodeId === aggregatorNodeId &&
+      candidate.to.port === 'variants',
+  )) {
+    const sourceNode = nodesById.get(edge.from.nodeId)
+
+    if (sourceNode?.type === 'viewer.variant') {
+      references.push({
+        id: readViewerString(sourceNode.params.id) ?? sourceNode.id,
+        sourceNodeId: sourceNode.id,
+      })
+    }
+  }
+
+  return references
+}
+
+function collectViewerVariantReferencesFromArray(
+  value: unknown,
+  sourceNodeId: string,
+): ViewerVariantReference[] {
+  return Array.isArray(value)
+    ? value
+        .map((item) => asRecord(item))
+        .filter((item): item is Record<string, unknown> => Boolean(item))
+        .map((item, index) => ({
+          id: readViewerString(item.id) ?? `variant-${index + 1}`,
+          sourceNodeId,
+        }))
+    : []
+}
+
+function collectViewerHotspotReferences(
+  graph: GraphDocument,
+  nodesById: Map<string, { type: string; params: Record<string, unknown>; id: string }>,
+  viewerBlockNode: { id: string; params: Record<string, unknown> },
+): ViewerHotspotReference[] {
+  const references = collectViewerHotspotReferencesFromArray(
+    viewerBlockNode.params.hotspots,
+    viewerBlockNode.id,
+  )
+
+  for (const edge of graph.edges.filter(
+    (candidate) =>
+      candidate.kind === 'data' &&
+      candidate.to.nodeId === viewerBlockNode.id &&
+      candidate.to.port === 'hotspots',
+  )) {
+    const sourceNode = nodesById.get(edge.from.nodeId)
+
+    if (sourceNode?.type === 'viewer.hotspots') {
+      references.push(...collectViewerHotspotReferencesFromAggregator(graph, nodesById, sourceNode.id))
+    }
+  }
+
+  return references
+}
+
+function collectViewerHotspotReferencesFromAggregator(
+  graph: GraphDocument,
+  nodesById: Map<string, { type: string; params: Record<string, unknown>; id: string }>,
+  aggregatorNodeId: string,
+): ViewerHotspotReference[] {
+  const references: ViewerHotspotReference[] = []
+
+  for (const edge of graph.edges.filter(
+    (candidate) =>
+      candidate.kind === 'data' &&
+      candidate.to.nodeId === aggregatorNodeId &&
+      candidate.to.port === 'hotspots',
+  )) {
+    const sourceNode = nodesById.get(edge.from.nodeId)
+
+    if (sourceNode?.type === 'viewer.hotspot') {
+      references.push(collectViewerHotspotReferenceFromNode(graph, nodesById, sourceNode))
+    }
+  }
+
+  return references
+}
+
+function collectViewerHotspotReferenceFromNode(
+  graph: GraphDocument,
+  nodesById: Map<string, { type: string; params: Record<string, unknown>; id: string }>,
+  hotspotNode: { id: string; params: Record<string, unknown> },
+): ViewerHotspotReference {
+  const actionEdge = graph.edges.find(
+    (edge) =>
+      edge.kind === 'data' &&
+      edge.to.nodeId === hotspotNode.id &&
+      edge.to.port === 'onClickAction',
+  )
+  const actionSourceNode = actionEdge ? nodesById.get(actionEdge.from.nodeId) : undefined
+  const linkedStateId = readViewerString(hotspotNode.params.linkedStateId)
+  const action =
+    (actionSourceNode ? getViewerActionFromNode(actionSourceNode) : undefined) ??
+    parseViewerActionConfig(hotspotNode.params.onClickAction)
+
+  return {
+    id: readViewerString(hotspotNode.params.id) ?? hotspotNode.id,
+    sourceNodeId: hotspotNode.id,
+    ...(linkedStateId ? { linkedStateId } : {}),
+    ...(action ? { action } : {}),
+    ...(actionSourceNode?.id ? { actionSourceNodeId: actionSourceNode.id } : {}),
+  }
+}
+
+function collectViewerHotspotReferencesFromArray(
+  value: unknown,
+  sourceNodeId: string,
+): ViewerHotspotReference[] {
+  return Array.isArray(value)
+    ? value
+        .map((item) => asRecord(item))
+        .filter((item): item is Record<string, unknown> => Boolean(item))
+        .map((item, index) => {
+          const linkedStateId = readViewerString(item.linkedStateId)
+          const action = parseViewerActionConfig(item.onClickAction)
+
+          return {
+            id: readViewerString(item.id) ?? `hotspot-${index + 1}`,
+            sourceNodeId,
+            ...(linkedStateId ? { linkedStateId } : {}),
+            ...(action ? { action } : {}),
+          }
+        })
+    : []
+}
+
+function resolveViewerInteractionsEnabled(
+  graph: GraphDocument,
+  nodesById: Map<string, { type: string; params: Record<string, unknown>; id: string }>,
+  viewerBlockNode: { id: string; params: Record<string, unknown> },
+): boolean {
+  const connectedEdge = graph.edges.find(
+    (edge) =>
+      edge.kind === 'data' &&
+      edge.to.nodeId === viewerBlockNode.id &&
+      edge.to.port === 'interactionsEnabled',
+  )
+
+  if (connectedEdge) {
+    const sourceNode = nodesById.get(connectedEdge.from.nodeId)
+
+    if (sourceNode?.type === 'data.value' && typeof sourceNode.params.value === 'boolean') {
+      return sourceNode.params.value
+    }
+  }
+
+  return viewerBlockNode.params.interactionsEnabled !== false
+}
+
+function getViewerActionFromNode(node: {
+  type: string
+  params: Record<string, unknown>
+}): ViewerActionConfig | undefined {
+  if (node.type === 'viewer.setState') {
+    return {
+      type: 'setState',
+      stateId: readViewerString(node.params.stateId) ?? '',
+    }
+  }
+
+  if (node.type === 'viewer.setVariant') {
+    return {
+      type: 'setVariant',
+      variantId: readViewerString(node.params.variantId) ?? '',
+    }
+  }
+
+  if (node.type === 'viewer.showHotspot') {
+    return {
+      type: 'showHotspot',
+      hotspotId: readViewerString(node.params.hotspotId) ?? '',
+    }
+  }
+
+  if (node.type === 'viewer.focusCamera') {
+    const camera = asRecord(node.params.camera)
+    const stateId = readViewerString(node.params.stateId)
+
+    return {
+      type: 'focusCamera',
+      ...(camera ? { camera: camera as never } : {}),
+      ...(stateId ? { stateId } : {}),
+    }
+  }
+
+  return undefined
+}
+
+function parseViewerActionConfig(value: unknown): ViewerActionConfig | undefined {
+  const action = asRecord(value)
+  const type = readViewerString(action?.type)
+
+  if (type === 'setState') {
+    return {
+      type: 'setState',
+      stateId: readViewerString(action?.stateId) ?? '',
+    }
+  }
+
+  if (type === 'setVariant') {
+    return {
+      type: 'setVariant',
+      variantId: readViewerString(action?.variantId) ?? '',
+    }
+  }
+
+  if (type === 'showHotspot') {
+    return {
+      type: 'showHotspot',
+      hotspotId: readViewerString(action?.hotspotId) ?? '',
+    }
+  }
+
+  if (type === 'focusCamera') {
+    const camera = asRecord(action?.camera)
+    const stateId = readViewerString(action?.stateId)
+
+    return {
+      type: 'focusCamera',
+      ...(camera ? { camera: camera as never } : {}),
+      ...(stateId ? { stateId } : {}),
+    }
+  }
+
+  return undefined
+}
+
+function getDuplicateViewerIds(values: Array<string | undefined>): string[] {
+  const duplicates = new Set<string>()
+  const seen = new Set<string>()
+
+  for (const value of values) {
+    if (!value) {
+      continue
+    }
+
+    if (seen.has(value)) {
+      duplicates.add(value)
+      continue
+    }
+
+    seen.add(value)
+  }
+
+  return [...duplicates]
+}
+
+function readViewerString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined
 }
 
 function getValueTypeForPortableField(

@@ -1,0 +1,377 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_viewer_hotspot_actions",
+    "name": "Viewer Hotspot Actions",
+    "createdAt": "2026-03-09T19:05:00.000Z",
+    "updatedAt": "2026-03-09T19:05:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_viewer_hotspot_actions_page",
+    "themeMode": "dark"
+  },
+  "graphs": [
+    {
+      "id": "graph_viewer_hotspot_actions_page",
+      "name": "Viewer Hotspot Actions Page",
+      "kind": "page",
+      "viewport": {
+        "x": -220,
+        "y": -140,
+        "zoom": 0.66
+      },
+      "nodes": [
+        {
+          "id": "node_hotspot_actions_theme",
+          "type": "style.theme",
+          "version": 1,
+          "label": "Theme",
+          "position": { "x": 40, "y": 80 },
+          "params": {
+            "colors": {
+              "background": "#10151f",
+              "surface": "#151e2c",
+              "text": "#eef4ff",
+              "accent": "#7cc0ff"
+            },
+            "typography": {
+              "fontFamily": "\"Space Grotesk\", \"IBM Plex Sans\", sans-serif",
+              "headingScale": 1.15,
+              "bodySize": "1rem"
+            }
+          }
+        },
+        {
+          "id": "node_hotspot_actions_page",
+          "type": "layout.page",
+          "version": 1,
+          "label": "Page",
+          "position": { "x": 280, "y": 120 },
+          "params": {
+            "maxWidth": 1160,
+            "padding": 40
+          }
+        },
+        {
+          "id": "node_hotspot_actions_model",
+          "type": "viewer.model",
+          "version": 1,
+          "label": "Model",
+          "position": { "x": 560, "y": -20 },
+          "params": {
+            "src": "/models/coupe.glb",
+            "format": "glb",
+            "alt": "Concept coupe"
+          }
+        },
+        {
+          "id": "node_hotspot_actions_state_default",
+          "type": "viewer.state",
+          "version": 1,
+          "label": "Default",
+          "position": { "x": 560, "y": 180 },
+          "params": {
+            "id": "default",
+            "label": "Overview",
+            "titleOverride": "Concept Coupe",
+            "descriptionOverride": "Base scene with a balanced camera and clean environment."
+          }
+        },
+        {
+          "id": "node_hotspot_actions_state_detail",
+          "type": "viewer.state",
+          "version": 1,
+          "label": "Detail",
+          "position": { "x": 560, "y": 360 },
+          "params": {
+            "id": "detail",
+            "label": "Cabin Detail",
+            "camera": {
+              "mode": "fixed",
+              "position": { "x": 1.2, "y": 1.1, "z": 1.6 },
+              "target": { "x": 0.1, "y": 0.8, "z": 0.1 },
+              "fov": 26
+            },
+            "titleOverride": "Interior Focus",
+            "descriptionOverride": "Hotspot action pushes the preview into a tighter cabin composition."
+          }
+        },
+        {
+          "id": "node_hotspot_actions_state_compare",
+          "type": "viewer.state",
+          "version": 1,
+          "label": "Compare",
+          "position": { "x": 560, "y": 540 },
+          "params": {
+            "id": "compare",
+            "label": "Compare Pass",
+            "environment": {
+              "type": "color",
+              "color": "#0d1320",
+              "intensity": 0.82
+            },
+            "titleOverride": "Compare Variant"
+          }
+        },
+        {
+          "id": "node_hotspot_actions_states",
+          "type": "viewer.states",
+          "version": 1,
+          "label": "States",
+          "position": { "x": 840, "y": 300 },
+          "params": {}
+        },
+        {
+          "id": "node_hotspot_actions_variant_day",
+          "type": "viewer.variant",
+          "version": 1,
+          "label": "Day",
+          "position": { "x": 840, "y": 520 },
+          "params": {
+            "id": "day",
+            "label": "Daylight",
+            "modelSrc": "/models/coupe.glb",
+            "environmentOverride": {
+              "type": "color",
+              "color": "#152135",
+              "intensity": 1
+            }
+          }
+        },
+        {
+          "id": "node_hotspot_actions_variant_night",
+          "type": "viewer.variant",
+          "version": 1,
+          "label": "Night",
+          "position": { "x": 840, "y": 700 },
+          "params": {
+            "id": "night",
+            "label": "Night Drive",
+            "modelSrc": "/models/coupe-night.glb",
+            "environmentOverride": {
+              "type": "color",
+              "color": "#09111d",
+              "intensity": 0.72
+            }
+          }
+        },
+        {
+          "id": "node_hotspot_actions_variants",
+          "type": "viewer.variants",
+          "version": 1,
+          "label": "Variants",
+          "position": { "x": 1120, "y": 620 },
+          "params": {}
+        },
+        {
+          "id": "node_hotspot_actions_set_state",
+          "type": "viewer.setState",
+          "version": 1,
+          "label": "Set Detail",
+          "position": { "x": 1120, "y": 80 },
+          "params": {
+            "stateId": "detail"
+          }
+        },
+        {
+          "id": "node_hotspot_actions_focus_camera",
+          "type": "viewer.focusCamera",
+          "version": 1,
+          "label": "Focus Compare",
+          "position": { "x": 1120, "y": 220 },
+          "params": {
+            "stateId": "compare",
+            "camera": {
+              "mode": "fixed",
+              "position": { "x": 2.4, "y": 0.9, "z": 1.4 },
+              "target": { "x": 0.4, "y": 0.6, "z": 0.1 },
+              "fov": 30
+            }
+          }
+        },
+        {
+          "id": "node_hotspot_actions_set_variant",
+          "type": "viewer.setVariant",
+          "version": 1,
+          "label": "Set Night",
+          "position": { "x": 1120, "y": 360 },
+          "params": {
+            "variantId": "night"
+          }
+        },
+        {
+          "id": "node_hotspot_actions_hotspot_door",
+          "type": "viewer.hotspot",
+          "version": 1,
+          "label": "Door",
+          "position": { "x": 1400, "y": 80 },
+          "params": {
+            "id": "door",
+            "label": "Door Seam",
+            "description": "Switches the viewer into the close-up state.",
+            "position": { "x": -0.4, "y": 0.7, "z": 0.5 }
+          }
+        },
+        {
+          "id": "node_hotspot_actions_hotspot_dash",
+          "type": "viewer.hotspot",
+          "version": 1,
+          "label": "Dash",
+          "position": { "x": 1400, "y": 260 },
+          "params": {
+            "id": "dash",
+            "label": "Dashboard",
+            "description": "Focus camera action applies a compare framing.",
+            "position": { "x": 0.2, "y": 0.9, "z": 0.1 }
+          }
+        },
+        {
+          "id": "node_hotspot_actions_hotspot_body",
+          "type": "viewer.hotspot",
+          "version": 1,
+          "label": "Body",
+          "position": { "x": 1400, "y": 440 },
+          "params": {
+            "id": "body",
+            "label": "Body Finish",
+            "description": "Switches the preview into the night variant.",
+            "position": { "x": 0.5, "y": 0.5, "z": -0.2 }
+          }
+        },
+        {
+          "id": "node_hotspot_actions_hotspots",
+          "type": "viewer.hotspots",
+          "version": 1,
+          "label": "Hotspots",
+          "position": { "x": 1680, "y": 260 },
+          "params": {}
+        },
+        {
+          "id": "node_hotspot_actions_block",
+          "type": "viewer.block",
+          "version": 1,
+          "label": "Viewer",
+          "position": { "x": 1960, "y": 220 },
+          "params": {
+            "title": "Concept Coupe Viewer",
+            "description": "Hotspots trigger serializable viewer actions in the preview shell.",
+            "showToolbar": true,
+            "allowOrbit": true,
+            "loadingMode": "lazy",
+            "background": "#0d1420",
+            "exposure": 1.08,
+            "initialStateId": "default",
+            "interactionsEnabled": true,
+            "stateTransitionMode": "soft"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_hotspot_actions_theme_page",
+          "from": { "nodeId": "node_hotspot_actions_theme", "port": "theme" },
+          "to": { "nodeId": "node_hotspot_actions_page", "port": "theme" },
+          "kind": "style"
+        },
+        {
+          "id": "edge_hotspot_actions_page_block",
+          "from": { "nodeId": "node_hotspot_actions_page", "port": "ui" },
+          "to": { "nodeId": "node_hotspot_actions_block", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_hotspot_actions_model_block",
+          "from": { "nodeId": "node_hotspot_actions_model", "port": "model" },
+          "to": { "nodeId": "node_hotspot_actions_block", "port": "model" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_actions_state_default_group",
+          "from": { "nodeId": "node_hotspot_actions_state_default", "port": "sceneState" },
+          "to": { "nodeId": "node_hotspot_actions_states", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_actions_state_detail_group",
+          "from": { "nodeId": "node_hotspot_actions_state_detail", "port": "sceneState" },
+          "to": { "nodeId": "node_hotspot_actions_states", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_actions_state_compare_group",
+          "from": { "nodeId": "node_hotspot_actions_state_compare", "port": "sceneState" },
+          "to": { "nodeId": "node_hotspot_actions_states", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_actions_states_block",
+          "from": { "nodeId": "node_hotspot_actions_states", "port": "states" },
+          "to": { "nodeId": "node_hotspot_actions_block", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_actions_variant_day_group",
+          "from": { "nodeId": "node_hotspot_actions_variant_day", "port": "variant" },
+          "to": { "nodeId": "node_hotspot_actions_variants", "port": "variants" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_actions_variant_night_group",
+          "from": { "nodeId": "node_hotspot_actions_variant_night", "port": "variant" },
+          "to": { "nodeId": "node_hotspot_actions_variants", "port": "variants" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_actions_variants_block",
+          "from": { "nodeId": "node_hotspot_actions_variants", "port": "variants" },
+          "to": { "nodeId": "node_hotspot_actions_block", "port": "variants" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_actions_set_state_hotspot",
+          "from": { "nodeId": "node_hotspot_actions_set_state", "port": "viewerAction" },
+          "to": { "nodeId": "node_hotspot_actions_hotspot_door", "port": "onClickAction" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_actions_focus_camera_hotspot",
+          "from": { "nodeId": "node_hotspot_actions_focus_camera", "port": "viewerAction" },
+          "to": { "nodeId": "node_hotspot_actions_hotspot_dash", "port": "onClickAction" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_actions_set_variant_hotspot",
+          "from": { "nodeId": "node_hotspot_actions_set_variant", "port": "viewerAction" },
+          "to": { "nodeId": "node_hotspot_actions_hotspot_body", "port": "onClickAction" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_actions_hotspot_door_group",
+          "from": { "nodeId": "node_hotspot_actions_hotspot_door", "port": "hotspot" },
+          "to": { "nodeId": "node_hotspot_actions_hotspots", "port": "hotspots" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_actions_hotspot_dash_group",
+          "from": { "nodeId": "node_hotspot_actions_hotspot_dash", "port": "hotspot" },
+          "to": { "nodeId": "node_hotspot_actions_hotspots", "port": "hotspots" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_actions_hotspot_body_group",
+          "from": { "nodeId": "node_hotspot_actions_hotspot_body", "port": "hotspot" },
+          "to": { "nodeId": "node_hotspot_actions_hotspots", "port": "hotspots" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_actions_hotspots_block",
+          "from": { "nodeId": "node_hotspot_actions_hotspots", "port": "hotspots" },
+          "to": { "nodeId": "node_hotspot_actions_block", "port": "hotspots" },
+          "kind": "data"
+        }
+      ]
+    }
+  ],
+  "assets": []
+}

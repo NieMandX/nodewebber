@@ -8,17 +8,39 @@ import type {
   ViewerOverlayProps,
 } from '@procedural-web-composer/shared-types'
 import type { UiNode } from '@procedural-web-composer/ui-tree'
+import {
+  applyViewerAction,
+  getHotspotAction,
+  getInitialViewerInteractionState,
+  resolveViewerConfig,
+} from './viewer-state'
 
 export function ViewerBlockRenderer(props: {
   node: UiNode
   renderChildren: (children: UiNode[]) => ReactNode[]
 }): JSX.Element {
   const viewerProps = props.node.props as ViewerBlockProps
-  const modelSrc = viewerProps.model?.src ?? viewerProps.modelSrc ?? ''
-  const environment = viewerProps.environment
-  const cameraPreset = viewerProps.cameraPreset
-  const hotspots = viewerProps.hotspots ?? []
   const overlayChildren = props.node.slots?.overlay ?? []
+  const stateSignature = JSON.stringify(viewerProps.states ?? [])
+  const variantSignature = JSON.stringify(viewerProps.variants ?? [])
+  const [interactionState, setInteractionState] = React.useState(() =>
+    getInitialViewerInteractionState(viewerProps),
+  )
+
+  React.useEffect(() => {
+    setInteractionState(getInitialViewerInteractionState(viewerProps))
+  }, [
+    props.node.id,
+    viewerProps.activeStateId,
+    viewerProps.activeVariantId,
+    viewerProps.initialStateId,
+    stateSignature,
+    variantSignature,
+  ])
+
+  const resolved = resolveViewerConfig(viewerProps, interactionState)
+  const statePickerLocked = isNonEmptyString(viewerProps.activeStateId)
+  const variantPickerLocked = isNonEmptyString(viewerProps.activeVariantId)
 
   return (
     <section
@@ -37,18 +59,27 @@ export function ViewerBlockRenderer(props: {
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'flex-start' }}>
         <div style={{ display: 'grid', gap: '4px' }}>
-          {viewerProps.title ? (
-            <strong style={{ fontSize: '1rem', letterSpacing: '-0.02em' }}>{viewerProps.title}</strong>
+          {resolved.title ? (
+            <strong style={{ fontSize: '1rem', letterSpacing: '-0.02em' }}>{resolved.title}</strong>
           ) : null}
           <span style={{ fontSize: '0.82rem', color: 'rgba(240, 245, 255, 0.72)' }}>
-            {modelSrc || 'No model source configured'}
+            {resolved.modelSrc || 'No model source configured'}
           </span>
+          {resolved.description ? (
+            <span style={{ fontSize: '0.84rem', color: 'rgba(240, 245, 255, 0.66)' }}>
+              {resolved.description}
+            </span>
+          ) : null}
         </div>
         <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <Badge label={viewerProps.loadingMode === 'eager' ? 'Eager load' : 'Lazy load'} />
           {viewerProps.allowOrbit ? <Badge label="Orbit" /> : <Badge label="Fixed view" />}
           {viewerProps.showToolbar ? <Badge label="Toolbar" /> : null}
-          {hotspots.length > 0 ? <Badge label={`${hotspots.length} hotspots`} /> : null}
+          <Badge label={resolved.interactionsEnabled ? 'Interactive' : 'Interactions off'} />
+          <Badge label={resolved.stateTransitionMode === 'instant' ? 'Instant state' : 'Soft state'} />
+          {resolved.activeStateId ? <Badge label={`State ${resolved.activeStateId}`} /> : null}
+          {resolved.activeVariantId ? <Badge label={`Variant ${resolved.activeVariantId}`} /> : null}
+          {resolved.hotspots.length > 0 ? <Badge label={`${resolved.hotspots.length} hotspots`} /> : null}
         </div>
       </div>
 
@@ -67,7 +98,7 @@ export function ViewerBlockRenderer(props: {
         {viewerProps.posterImage ? (
           <img
             src={viewerProps.posterImage}
-            alt={viewerProps.title ?? viewerProps.model?.alt ?? 'Viewer poster'}
+            alt={resolved.title ?? resolved.model?.alt ?? 'Viewer poster'}
             style={{
               width: '100%',
               height: '100%',
@@ -96,11 +127,16 @@ export function ViewerBlockRenderer(props: {
             textAlign: 'center',
           }}
         >
-          <div style={{ display: 'grid', gap: '8px', maxWidth: '320px' }}>
-            <strong style={{ fontSize: '1.05rem' }}>Viewer placeholder</strong>
+          <div style={{ display: 'grid', gap: '8px', maxWidth: '360px' }}>
+            <strong style={{ fontSize: '1.05rem' }}>Interactive viewer placeholder</strong>
             <span style={{ color: 'rgba(240, 245, 255, 0.76)', fontSize: '0.88rem' }}>
-              This block already carries serializable viewer config and can be swapped for a real 3D viewer integration later.
+              Scene states, variants, and hotspot actions are already serialized through the graph and resolved locally in the renderer.
             </span>
+            {resolved.activeState?.label ? (
+              <span style={{ color: 'rgba(240, 245, 255, 0.6)', fontSize: '0.8rem' }}>
+                {`Current scene: ${resolved.activeState.label}`}
+              </span>
+            ) : null}
           </div>
         </div>
 
@@ -118,22 +154,111 @@ export function ViewerBlockRenderer(props: {
         ) : null}
       </div>
 
+      {(resolved.states.length > 0 || resolved.variants.length > 0) ? (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+            gap: '12px',
+          }}
+        >
+          {resolved.states.length > 0 ? (
+            <label style={{ display: 'grid', gap: '6px' }}>
+              <span style={{ fontSize: '0.76rem', color: 'rgba(240, 245, 255, 0.66)', textTransform: 'uppercase' }}>
+                Scene state
+              </span>
+              <select
+                value={resolved.activeStateId ?? ''}
+                disabled={!resolved.interactionsEnabled || statePickerLocked}
+                style={selectStyle}
+                onChange={(event) => {
+                  const nextValue = event.target.value.trim()
+                  setInteractionState({
+                    activeStateId: nextValue.length > 0 ? nextValue : undefined,
+                    activeVariantId: undefined,
+                    activeHotspotId: undefined,
+                    focusedCamera: undefined,
+                  })
+                }}
+              >
+                <option value="">Base viewer</option>
+                {resolved.states.map((state) => (
+                  <option key={state.id} value={state.id}>
+                    {state.label ?? state.id}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+          {resolved.variants.length > 0 ? (
+            <label style={{ display: 'grid', gap: '6px' }}>
+              <span style={{ fontSize: '0.76rem', color: 'rgba(240, 245, 255, 0.66)', textTransform: 'uppercase' }}>
+                Variant
+              </span>
+              <select
+                value={resolved.activeVariantId ?? ''}
+                disabled={!resolved.interactionsEnabled || variantPickerLocked}
+                style={selectStyle}
+                onChange={(event) => {
+                  const nextValue = event.target.value.trim()
+                  setInteractionState((currentState) => ({
+                    ...currentState,
+                    activeVariantId: nextValue.length > 0 ? nextValue : undefined,
+                  }))
+                }}
+              >
+                <option value="">Base variant</option>
+                {resolved.variants.map((variant) => (
+                  <option key={variant.id} value={variant.id}>
+                    {variant.label ?? variant.id}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+        </div>
+      ) : null}
+
       <div style={{ display: 'grid', gap: '10px' }}>
-        <ViewerMetaRow label="Model" value={modelSrc || 'Unset'} />
-        <ViewerMetaRow label="Environment" value={formatEnvironment(environment)} />
-        <ViewerMetaRow label="Camera" value={formatCamera(cameraPreset)} />
+        <ViewerMetaRow label="Model" value={resolved.modelSrc || 'Unset'} />
+        <ViewerMetaRow label="Environment" value={formatEnvironment(resolved.environment)} />
+        <ViewerMetaRow label="Camera" value={formatCamera(resolved.camera)} />
+        <ViewerMetaRow label="Active state" value={resolved.activeState?.label ?? resolved.activeStateId ?? 'Base'} />
+        <ViewerMetaRow label="Active variant" value={resolved.activeVariant?.label ?? resolved.activeVariantId ?? 'Base'} />
+        <ViewerMetaRow label="Active hotspot" value={resolved.activeHotspot?.label ?? resolved.activeHotspotId ?? 'None'} />
         <ViewerMetaRow
           label="Exposure"
           value={typeof viewerProps.exposure === 'number' ? String(viewerProps.exposure) : '1'}
         />
       </div>
 
-      {hotspots.length > 0 ? (
+      {resolved.hotspots.length > 0 ? (
         <div style={{ display: 'grid', gap: '8px' }}>
           <strong style={{ fontSize: '0.86rem' }}>Hotspots</strong>
           <div style={{ display: 'grid', gap: '8px' }}>
-            {hotspots.map((hotspot) => (
-              <HotspotCard key={hotspot.id ?? hotspot.label ?? JSON.stringify(hotspot)} hotspot={hotspot} />
+            {resolved.hotspots.map((hotspot) => (
+              <HotspotButton
+                key={hotspot.id ?? hotspot.label ?? JSON.stringify(hotspot)}
+                hotspot={hotspot}
+                active={resolved.activeHotspotId === hotspot.id}
+                disabled={!resolved.interactionsEnabled}
+                onClick={() => {
+                  const action = getHotspotAction(hotspot)
+
+                  if (action) {
+                    setInteractionState((currentState) => ({
+                      ...applyViewerAction(action, currentState),
+                      ...(hotspot.id ? { activeHotspotId: hotspot.id } : {}),
+                    }))
+                    return
+                  }
+
+                  setInteractionState((currentState) => ({
+                    ...currentState,
+                    activeHotspotId: hotspot.id,
+                  }))
+                }}
+              />
             ))}
           </div>
         </div>
@@ -183,20 +308,33 @@ export function ViewerOverlayRenderer(props: {
   )
 }
 
-function HotspotCard(props: {
+function HotspotButton(props: {
   hotspot: ViewerHotspotConfig
+  active: boolean
+  disabled: boolean
+  onClick: () => void
 }): JSX.Element {
   const position = props.hotspot.position
+  const action = getHotspotAction(props.hotspot)
 
   return (
-    <article
+    <button
+      type="button"
+      onClick={props.onClick}
+      disabled={props.disabled}
       style={{
         display: 'grid',
         gap: '4px',
         padding: '10px 12px',
         borderRadius: '14px',
-        background: 'rgba(255,255,255,0.06)',
-        border: '1px solid rgba(255,255,255,0.08)',
+        background: props.active ? 'rgba(116, 176, 255, 0.18)' : 'rgba(255,255,255,0.06)',
+        border: props.active
+          ? '1px solid rgba(116, 176, 255, 0.34)'
+          : '1px solid rgba(255,255,255,0.08)',
+        color: '#f5f7fb',
+        textAlign: 'left',
+        cursor: props.disabled ? 'not-allowed' : 'pointer',
+        opacity: props.disabled ? 0.6 : 1,
       }}
     >
       <strong style={{ fontSize: '0.86rem' }}>{props.hotspot.label ?? props.hotspot.id ?? 'Hotspot'}</strong>
@@ -210,7 +348,12 @@ function HotspotCard(props: {
           {`x:${position.x} y:${position.y} z:${position.z}`}
         </span>
       ) : null}
-    </article>
+      {action ? (
+        <span style={{ color: 'rgba(155, 207, 255, 0.88)', fontSize: '0.76rem' }}>
+          {formatAction(action)}
+        </span>
+      ) : null}
+    </button>
   )
 }
 
@@ -277,9 +420,27 @@ function formatCamera(cameraPreset: ViewerCameraConfig | undefined): string {
   return `${mode}${fov}`
 }
 
-function overlayPositionStyle(
-  position: ViewerOverlayProps['position'],
-): CSSProperties {
+function formatAction(action: ReturnType<typeof getHotspotAction>): string {
+  if (!action) {
+    return 'No interaction'
+  }
+
+  if (action.type === 'setState') {
+    return `On click: state ${action.stateId || 'unset'}`
+  }
+
+  if (action.type === 'setVariant') {
+    return `On click: variant ${action.variantId || 'unset'}`
+  }
+
+  if (action.type === 'showHotspot') {
+    return `On click: hotspot ${action.hotspotId || 'unset'}`
+  }
+
+  return action.stateId ? `On click: focus + state ${action.stateId}` : 'On click: focus camera'
+}
+
+function overlayPositionStyle(position: ViewerOverlayProps['position']): CSSProperties {
   if (position === 'top-left') {
     return {
       top: '18px',
@@ -317,4 +478,18 @@ function toCssProperties(styles: UiNode['styles']): CSSProperties {
   )
 
   return Object.fromEntries(entries) as CSSProperties
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0
+}
+
+const selectStyle: CSSProperties = {
+  width: '100%',
+  minHeight: '38px',
+  padding: '0 12px',
+  borderRadius: '12px',
+  border: '1px solid rgba(255,255,255,0.12)',
+  background: 'rgba(255,255,255,0.06)',
+  color: '#f5f7fb',
 }

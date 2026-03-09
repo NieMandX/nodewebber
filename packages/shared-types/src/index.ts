@@ -172,15 +172,56 @@ export interface ViewerCameraConfig {
   maxDistance?: number
 }
 
+export interface ViewerSceneStateConfig {
+  id: string
+  label?: string
+  camera?: ViewerCameraConfig
+  environment?: ViewerEnvironmentConfig
+  activeVariantId?: string
+  activeHotspotId?: string
+  titleOverride?: string
+  descriptionOverride?: string
+  metadata?: Record<string, unknown>
+}
+
+export interface ViewerVariantConfig {
+  id: string
+  label?: string
+  modelSrc?: string
+  environmentOverride?: ViewerEnvironmentConfig
+}
+
+export type ViewerActionConfig =
+  | {
+      type: 'focusCamera'
+      camera?: ViewerCameraConfig
+      stateId?: string
+    }
+  | {
+      type: 'setState'
+      stateId: string
+    }
+  | {
+      type: 'setVariant'
+      variantId: string
+    }
+  | {
+      type: 'showHotspot'
+      hotspotId: string
+    }
+
 export interface ViewerHotspotConfig {
   id?: string
   label?: string
   description?: string
   position?: ViewerVector3
+  onClickAction?: ViewerActionConfig
+  linkedStateId?: string
 }
 
 export interface ViewerBlockProps {
   title?: string
+  description?: string
   modelSrc?: string
   model?: ViewerModelConfig
   environment?: ViewerEnvironmentConfig
@@ -192,6 +233,13 @@ export interface ViewerBlockProps {
   loadingMode?: 'eager' | 'lazy'
   posterImage?: string
   hotspots?: ViewerHotspotConfig[]
+  states?: ViewerSceneStateConfig[]
+  variants?: ViewerVariantConfig[]
+  initialStateId?: string
+  activeStateId?: string
+  activeVariantId?: string
+  interactionsEnabled?: boolean
+  stateTransitionMode?: 'instant' | 'soft'
 }
 
 export interface ViewerOverlayProps {
