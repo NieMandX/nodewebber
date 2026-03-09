@@ -563,6 +563,101 @@ function validateGraphSemantics(
     }
   }
 
+  for (const node of graph.nodes) {
+    if (node.type === 'viewer.block') {
+      const hasConnectedModel = graph.edges.some(
+        (edge) =>
+          edge.kind === 'data' &&
+          edge.to.nodeId === node.id &&
+          edge.to.port === 'model',
+      )
+      const fallbackModel = asRecord(node.params.model)
+      const fallbackModelSrc =
+        typeof fallbackModel?.src === 'string' ? fallbackModel.src.trim() : ''
+      const modelSrc =
+        typeof node.params.modelSrc === 'string' ? node.params.modelSrc.trim() : ''
+
+      if (!hasConnectedModel && fallbackModelSrc.length === 0 && modelSrc.length === 0) {
+        issues.push({
+          code: 'viewer_block_model_missing',
+          message: `Viewer block "${node.id}" has no model source configured.`,
+          severity: 'warning',
+          graphId: graph.id,
+          nodeId: node.id,
+        })
+      }
+    }
+
+    if (node.type === 'viewer.model') {
+      const src = typeof node.params.src === 'string' ? node.params.src.trim() : ''
+
+      if (src.length === 0) {
+        issues.push({
+          code: 'viewer_model_src_missing',
+          message: `Viewer model "${node.id}" has an empty source.`,
+          severity: 'warning',
+          graphId: graph.id,
+          nodeId: node.id,
+        })
+      }
+    }
+
+    if (node.type === 'viewer.environment') {
+      const type = node.params.type === 'hdri' ? 'hdri' : 'color'
+      const hdriSrc =
+        typeof node.params.hdriSrc === 'string' ? node.params.hdriSrc.trim() : ''
+
+      if (type === 'hdri' && hdriSrc.length === 0) {
+        issues.push({
+          code: 'viewer_environment_hdri_missing',
+          message: `Viewer environment "${node.id}" uses HDRI mode without "hdriSrc".`,
+          severity: 'warning',
+          graphId: graph.id,
+          nodeId: node.id,
+        })
+      }
+    }
+
+    if (node.type === 'viewer.hotspot' && !hasValidViewerVector(node.params.position)) {
+      issues.push({
+        code: 'viewer_hotspot_position_invalid',
+        message: `Viewer hotspot "${node.id}" is missing a valid 3D position.`,
+        severity: 'warning',
+        graphId: graph.id,
+        nodeId: node.id,
+      })
+    }
+
+    if (node.type === 'viewer.cameraPreset' && !hasValidViewerCameraParams(node.params)) {
+      issues.push({
+        code: 'viewer_camera_invalid',
+        message: `Viewer camera preset "${node.id}" has invalid numeric constraints.`,
+        severity: 'warning',
+        graphId: graph.id,
+        nodeId: node.id,
+      })
+    }
+
+    if (node.type === 'viewer.hotspots') {
+      const hotspotEdgeCount = graph.edges.filter(
+        (edge) =>
+          edge.kind === 'data' &&
+          edge.to.nodeId === node.id &&
+          edge.to.port === 'hotspots',
+      ).length
+
+      if (hotspotEdgeCount === 0) {
+        issues.push({
+          code: 'viewer_hotspots_empty',
+          message: `Viewer hotspots node "${node.id}" has no hotspot inputs connected.`,
+          severity: 'warning',
+          graphId: graph.id,
+          nodeId: node.id,
+        })
+      }
+    }
+  }
+
   return issues
 }
 
@@ -679,6 +774,61 @@ function getValueTypeForPortableField(
   }
 
   return 'unknown'
+}
+
+function asRecord(value: unknown): Record<string, unknown> | undefined {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : undefined
+}
+
+function hasValidViewerVector(value: unknown): boolean {
+  const vector = asRecord(value)
+
+  return (
+    typeof vector?.x === 'number' &&
+    Number.isFinite(vector.x) &&
+    typeof vector.y === 'number' &&
+    Number.isFinite(vector.y) &&
+    typeof vector.z === 'number' &&
+    Number.isFinite(vector.z)
+  )
+}
+
+function hasValidViewerCameraParams(params: Record<string, unknown>): boolean {
+  const fov = params.fov
+  const minDistance = params.minDistance
+  const maxDistance = params.maxDistance
+
+  if (typeof fov === 'number' && (!Number.isFinite(fov) || fov <= 0)) {
+    return false
+  }
+
+  if (typeof minDistance === 'number' && (!Number.isFinite(minDistance) || minDistance < 0)) {
+    return false
+  }
+
+  if (typeof maxDistance === 'number' && (!Number.isFinite(maxDistance) || maxDistance < 0)) {
+    return false
+  }
+
+  if (
+    typeof minDistance === 'number' &&
+    typeof maxDistance === 'number' &&
+    maxDistance < minDistance
+  ) {
+    return false
+  }
+
+  if ('position' in params && params.position !== undefined && !hasValidViewerVector(params.position)) {
+    return false
+  }
+
+  if ('target' in params && params.target !== undefined && !hasValidViewerVector(params.target)) {
+    return false
+  }
+
+  return true
 }
 
 function isCompatibleEdgeKind(

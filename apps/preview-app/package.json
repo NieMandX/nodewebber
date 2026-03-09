@@ -14,6 +14,7 @@
     "@procedural-web-composer/node-definitions-layout": "workspace:*",
     "@procedural-web-composer/node-definitions-style": "workspace:*",
     "@procedural-web-composer/node-definitions-subgraph": "workspace:*",
+    "@procedural-web-composer/node-definitions-viewer": "workspace:*",
     "@procedural-web-composer/node-registry": "workspace:*",
     "@procedural-web-composer/runtime-core": "workspace:*",
     "@procedural-web-composer/runtime-react": "workspace:*",

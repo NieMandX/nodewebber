@@ -1,0 +1,227 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_viewer_in_subgraph",
+    "name": "Viewer In Subgraph",
+    "createdAt": "2026-03-09T18:20:00.000Z",
+    "updatedAt": "2026-03-09T18:20:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_viewer_subgraph_page",
+    "themeMode": "light"
+  },
+  "graphs": [
+    {
+      "id": "graph_viewer_subgraph_page",
+      "name": "Viewer Subgraph Demo",
+      "kind": "page",
+      "viewport": {
+        "x": -140,
+        "y": -110,
+        "zoom": 0.72
+      },
+      "nodes": [
+        {
+          "id": "node_viewer_subgraph_theme",
+          "type": "style.theme",
+          "version": 1,
+          "label": "Theme",
+          "position": { "x": 80, "y": 80 },
+          "params": {
+            "colors": {
+              "background": "#f5efe6",
+              "surface": "#fffaf3",
+              "text": "#201912",
+              "accent": "#c06d3c"
+            },
+            "typography": {
+              "fontFamily": "\"Space Grotesk\", \"IBM Plex Sans\", sans-serif",
+              "headingScale": 1.15,
+              "bodySize": "1rem"
+            }
+          }
+        },
+        {
+          "id": "node_viewer_subgraph_page",
+          "type": "layout.page",
+          "version": 1,
+          "label": "Page",
+          "position": { "x": 320, "y": 120 },
+          "params": {
+            "maxWidth": 1120,
+            "padding": 36
+          }
+        },
+        {
+          "id": "node_viewer_subgraph_instance",
+          "type": "subgraph.instance",
+          "version": 1,
+          "label": "Viewer Card",
+          "position": { "x": 660, "y": 150 },
+          "params": {
+            "subgraphGraphId": "graph_component_viewer_card",
+            "title": "Headset Viewer",
+            "model": {
+              "src": "/models/headset.glb",
+              "format": "glb",
+              "alt": "Headset model"
+            }
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_viewer_subgraph_theme_page",
+          "from": { "nodeId": "node_viewer_subgraph_theme", "port": "theme" },
+          "to": { "nodeId": "node_viewer_subgraph_page", "port": "theme" },
+          "kind": "style"
+        },
+        {
+          "id": "edge_viewer_subgraph_page_instance",
+          "from": { "nodeId": "node_viewer_subgraph_page", "port": "ui" },
+          "to": { "nodeId": "node_viewer_subgraph_instance", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "graph_component_viewer_card",
+      "name": "Viewer Card",
+      "kind": "subgraph",
+      "subgraph": {
+        "publicParamsSchema": {
+          "title": { "type": "string" },
+          "model": { "type": "json" }
+        },
+        "publicDefaultParams": {
+          "title": "Product Viewer",
+          "model": {
+            "src": "/models/headset.glb",
+            "format": "glb",
+            "alt": "Headset model"
+          }
+        }
+      },
+      "viewport": {
+        "x": 0,
+        "y": 0,
+        "zoom": 0.88
+      },
+      "nodes": [
+        {
+          "id": "node_viewer_card_section",
+          "type": "layout.section",
+          "version": 1,
+          "label": "Section",
+          "position": { "x": 520, "y": 140 },
+          "params": {
+            "paddingY": 28,
+            "background": "transparent"
+          }
+        },
+        {
+          "id": "node_viewer_card_stack",
+          "type": "layout.stack",
+          "version": 1,
+          "label": "Stack",
+          "position": { "x": 820, "y": 140 },
+          "params": {
+            "direction": "column",
+            "gap": 16,
+            "align": "stretch"
+          }
+        },
+        {
+          "id": "node_viewer_card_title",
+          "type": "content.heading",
+          "version": 1,
+          "label": "Title",
+          "position": { "x": 1120, "y": 0 },
+          "params": {
+            "text": "Product Viewer",
+            "level": 2,
+            "align": "left"
+          }
+        },
+        {
+          "id": "node_viewer_card_block",
+          "type": "viewer.block",
+          "version": 1,
+          "label": "Viewer",
+          "position": { "x": 1120, "y": 220 },
+          "params": {
+            "title": "Embedded Viewer",
+            "showToolbar": true,
+            "allowOrbit": true,
+            "loadingMode": "lazy",
+            "background": "#101826",
+            "exposure": 1
+          }
+        },
+        {
+          "id": "node_viewer_card_param_title",
+          "type": "subgraph.param",
+          "version": 1,
+          "label": "title",
+          "position": { "x": 140, "y": 0 },
+          "params": {
+            "key": "title",
+            "fallbackValue": "Product Viewer"
+          }
+        },
+        {
+          "id": "node_viewer_card_param_model",
+          "type": "subgraph.param",
+          "version": 1,
+          "label": "model",
+          "position": { "x": 140, "y": 220 },
+          "params": {
+            "key": "model",
+            "fallbackValue": {
+              "src": "/models/headset.glb",
+              "format": "glb",
+              "alt": "Headset model"
+            }
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_viewer_card_section_stack",
+          "from": { "nodeId": "node_viewer_card_section", "port": "ui" },
+          "to": { "nodeId": "node_viewer_card_stack", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_viewer_card_stack_title",
+          "from": { "nodeId": "node_viewer_card_stack", "port": "ui" },
+          "to": { "nodeId": "node_viewer_card_title", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_viewer_card_stack_block",
+          "from": { "nodeId": "node_viewer_card_stack", "port": "ui" },
+          "to": { "nodeId": "node_viewer_card_block", "port": "parent" },
+          "kind": "structure",
+          "order": 1
+        },
+        {
+          "id": "edge_viewer_card_param_title",
+          "from": { "nodeId": "node_viewer_card_param_title", "port": "value" },
+          "to": { "nodeId": "node_viewer_card_title", "port": "text" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_viewer_card_param_model",
+          "from": { "nodeId": "node_viewer_card_param_model", "port": "value" },
+          "to": { "nodeId": "node_viewer_card_block", "port": "model" },
+          "kind": "data"
+        }
+      ]
+    }
+  ],
+  "assets": []
+}

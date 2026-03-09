@@ -59,6 +59,9 @@ importers:
       '@procedural-web-composer/node-definitions-subgraph':
         specifier: workspace:*
         version: link:../../packages/node-definitions-subgraph
+      '@procedural-web-composer/node-definitions-viewer':
+        specifier: workspace:*
+        version: link:../../packages/node-definitions-viewer
       '@procedural-web-composer/node-registry':
         specifier: workspace:*
         version: link:../../packages/node-registry
@@ -123,6 +126,9 @@ importers:
       '@procedural-web-composer/node-definitions-subgraph':
         specifier: workspace:*
         version: link:../../packages/node-definitions-subgraph
+      '@procedural-web-composer/node-definitions-viewer':
+        specifier: workspace:*
+        version: link:../../packages/node-definitions-viewer
       '@procedural-web-composer/node-registry':
         specifier: workspace:*
         version: link:../../packages/node-registry
@@ -259,6 +265,18 @@ importers:
       '@procedural-web-composer/shared-types':
         specifier: workspace:*
         version: link:../shared-types
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
+
+  packages/node-definitions-viewer:
+    dependencies:
+      '@procedural-web-composer/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
+      '@procedural-web-composer/ui-tree':
+        specifier: workspace:*
+        version: link:../ui-tree
       zod:
         specifier: ^3.24.1
         version: 3.25.76

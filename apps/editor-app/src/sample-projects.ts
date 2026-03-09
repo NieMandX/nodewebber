@@ -6,8 +6,26 @@ import slotShellLayout from '../../../examples/slot-shell-layout.json'
 import subgraphCardGrid from '../../../examples/subgraph-card-grid.json'
 import subgraphHeroComponent from '../../../examples/subgraph-hero-component.json'
 import subgraphSlotActions from '../../../examples/subgraph-slot-actions.json'
+import viewerBasic from '../../../examples/viewer-basic.json'
+import viewerHotspots from '../../../examples/viewer-hotspots.json'
+import viewerInSubgraph from '../../../examples/viewer-in-subgraph.json'
 
 export const sampleProjects = [
+  {
+    key: 'viewer-basic',
+    label: 'Viewer Basic',
+    document: viewerBasic,
+  },
+  {
+    key: 'viewer-hotspots',
+    label: 'Viewer Hotspots',
+    document: viewerHotspots,
+  },
+  {
+    key: 'viewer-in-subgraph',
+    label: 'Viewer In Subgraph',
+    document: viewerInSubgraph,
+  },
   {
     key: 'data-card-list',
     label: 'Data Card List',

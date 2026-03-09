@@ -4,7 +4,6 @@ import { getGraphById } from '@procedural-web-composer/editor-core'
 import type { EditorStore } from '@procedural-web-composer/editor-core'
 import type {
   GraphIssue,
-  NodeDefinition,
   NodeDefinitionResolver,
   PortableParamSchema,
   PortDefinition,
@@ -60,9 +59,7 @@ export function NodeInspector(props: NodeInspectorProps): JSX.Element {
         ? definition.slots
         : []
   const bindableInputKeys = new Set(
-    inputs
-      .filter((input) => input.valueType === 'string' || input.valueType === 'number' || input.valueType === 'boolean')
-      .map((input) => input.key),
+    inputs.map((input) => input.key),
   )
   const generalFields = schemaFields.filter((field) => !bindableInputKeys.has(field.key))
   const nodeIssues = props.issues.filter((issue) => issue.nodeId === node.id)

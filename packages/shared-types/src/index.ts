@@ -143,6 +143,63 @@ export interface ThemeValue {
   }
 }
 
+export interface ViewerVector3 {
+  x: number
+  y: number
+  z: number
+}
+
+export interface ViewerModelConfig {
+  src: string
+  format?: 'gltf' | 'glb' | 'fbx' | 'auto'
+  alt?: string
+}
+
+export interface ViewerEnvironmentConfig {
+  type?: 'color' | 'hdri'
+  color?: string
+  hdriSrc?: string
+  intensity?: number
+  rotation?: number
+}
+
+export interface ViewerCameraConfig {
+  mode?: 'orbit' | 'fixed'
+  position?: ViewerVector3
+  target?: ViewerVector3
+  fov?: number
+  minDistance?: number
+  maxDistance?: number
+}
+
+export interface ViewerHotspotConfig {
+  id?: string
+  label?: string
+  description?: string
+  position?: ViewerVector3
+}
+
+export interface ViewerBlockProps {
+  title?: string
+  modelSrc?: string
+  model?: ViewerModelConfig
+  environment?: ViewerEnvironmentConfig
+  cameraPreset?: ViewerCameraConfig
+  background?: string
+  exposure?: number
+  allowOrbit?: boolean
+  showToolbar?: boolean
+  loadingMode?: 'eager' | 'lazy'
+  posterImage?: string
+  hotspots?: ViewerHotspotConfig[]
+}
+
+export interface ViewerOverlayProps {
+  title?: string
+  description?: string
+  position: 'top-left' | 'top-right' | 'bottom-left' | 'bottom-right'
+}
+
 export interface EvaluationContext {
   project: ProjectDocument
   graph: GraphDocument

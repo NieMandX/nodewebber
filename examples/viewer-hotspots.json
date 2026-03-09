@@ -1,0 +1,179 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_viewer_hotspots",
+    "name": "Viewer Hotspots",
+    "createdAt": "2026-03-09T18:10:00.000Z",
+    "updatedAt": "2026-03-09T18:10:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_viewer_hotspots_page",
+    "themeMode": "light"
+  },
+  "graphs": [
+    {
+      "id": "graph_viewer_hotspots_page",
+      "name": "Viewer Hotspots Page",
+      "kind": "page",
+      "viewport": {
+        "x": -180,
+        "y": -140,
+        "zoom": 0.7
+      },
+      "nodes": [
+        {
+          "id": "node_hotspots_theme",
+          "type": "style.theme",
+          "version": 1,
+          "label": "Theme",
+          "position": { "x": 80, "y": 80 },
+          "params": {
+            "colors": {
+              "background": "#f6efe6",
+              "surface": "#fffaf3",
+              "text": "#211914",
+              "accent": "#bc6a3c"
+            },
+            "typography": {
+              "fontFamily": "\"Space Grotesk\", \"IBM Plex Sans\", sans-serif",
+              "headingScale": 1.16,
+              "bodySize": "1rem"
+            }
+          }
+        },
+        {
+          "id": "node_hotspots_page",
+          "type": "layout.page",
+          "version": 1,
+          "label": "Page",
+          "position": { "x": 320, "y": 120 },
+          "params": {
+            "maxWidth": 1120,
+            "padding": 36
+          }
+        },
+        {
+          "id": "node_hotspots_model",
+          "type": "viewer.model",
+          "version": 1,
+          "label": "Model",
+          "position": { "x": 620, "y": 0 },
+          "params": {
+            "src": "/models/sneaker.glb",
+            "format": "glb",
+            "alt": "Sneaker model"
+          }
+        },
+        {
+          "id": "node_hotspot_heel",
+          "type": "viewer.hotspot",
+          "version": 1,
+          "label": "Heel",
+          "position": { "x": 620, "y": 180 },
+          "params": {
+            "id": "heel",
+            "label": "Heel support",
+            "description": "Reinforced heel geometry for a more stable silhouette.",
+            "position": { "x": -0.3, "y": 0.1, "z": -0.6 }
+          }
+        },
+        {
+          "id": "node_hotspot_upper",
+          "type": "viewer.hotspot",
+          "version": 1,
+          "label": "Upper",
+          "position": { "x": 620, "y": 360 },
+          "params": {
+            "id": "upper",
+            "label": "Breathable upper",
+            "description": "Layered mesh zones tuned for airflow and structure.",
+            "position": { "x": 0.2, "y": 0.4, "z": 0.3 }
+          }
+        },
+        {
+          "id": "node_hotspot_group",
+          "type": "viewer.hotspots",
+          "version": 1,
+          "label": "Hotspots",
+          "position": { "x": 900, "y": 240 },
+          "params": {}
+        },
+        {
+          "id": "node_hotspots_block",
+          "type": "viewer.block",
+          "version": 1,
+          "label": "Viewer",
+          "position": { "x": 1180, "y": 140 },
+          "params": {
+            "title": "Sneaker Detail Viewer",
+            "showToolbar": true,
+            "allowOrbit": true,
+            "loadingMode": "lazy",
+            "background": "#101826",
+            "exposure": 1
+          }
+        },
+        {
+          "id": "node_hotspots_overlay",
+          "type": "viewer.overlay",
+          "version": 1,
+          "label": "Overlay",
+          "position": { "x": 1480, "y": 80 },
+          "params": {
+            "title": "Hotspot mode",
+            "description": "Annotations are supplied as config objects and rendered inside the viewer placeholder.",
+            "position": "top-right"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_hotspots_theme_page",
+          "from": { "nodeId": "node_hotspots_theme", "port": "theme" },
+          "to": { "nodeId": "node_hotspots_page", "port": "theme" },
+          "kind": "style"
+        },
+        {
+          "id": "edge_hotspots_page_block",
+          "from": { "nodeId": "node_hotspots_page", "port": "ui" },
+          "to": { "nodeId": "node_hotspots_block", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_hotspots_model_block",
+          "from": { "nodeId": "node_hotspots_model", "port": "model" },
+          "to": { "nodeId": "node_hotspots_block", "port": "model" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_heel_group",
+          "from": { "nodeId": "node_hotspot_heel", "port": "hotspot" },
+          "to": { "nodeId": "node_hotspot_group", "port": "hotspots" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_upper_group",
+          "from": { "nodeId": "node_hotspot_upper", "port": "hotspot" },
+          "to": { "nodeId": "node_hotspot_group", "port": "hotspots" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspot_group_block",
+          "from": { "nodeId": "node_hotspot_group", "port": "hotspots" },
+          "to": { "nodeId": "node_hotspots_block", "port": "hotspots" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hotspots_overlay_slot",
+          "from": { "nodeId": "node_hotspots_block", "port": "ui" },
+          "to": { "nodeId": "node_hotspots_overlay", "port": "parent" },
+          "kind": "structure",
+          "slot": "overlay",
+          "order": 0
+        }
+      ]
+    }
+  ],
+  "assets": []
+}

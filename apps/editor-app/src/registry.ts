@@ -4,11 +4,13 @@ import { dataNodeDefinitions } from '@procedural-web-composer/node-definitions-d
 import { layoutNodeDefinitions } from '@procedural-web-composer/node-definitions-layout'
 import { styleNodeDefinitions } from '@procedural-web-composer/node-definitions-style'
 import { subgraphNodeDefinitions } from '@procedural-web-composer/node-definitions-subgraph'
+import { viewerNodeDefinitions } from '@procedural-web-composer/node-definitions-viewer'
 
 const registryInstance = createNodeRegistry([
   ...layoutNodeDefinitions,
   ...basicNodeDefinitions,
   ...dataNodeDefinitions,
+  ...viewerNodeDefinitions,
   ...styleNodeDefinitions,
   ...subgraphNodeDefinitions,
 ])

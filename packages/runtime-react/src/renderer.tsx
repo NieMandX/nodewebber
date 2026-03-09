@@ -3,6 +3,7 @@ import type { CSSProperties, ReactNode } from 'react'
 import { normalizeThemeValue } from '@procedural-web-composer/shared-utils'
 import type { UiNode } from '@procedural-web-composer/ui-tree'
 import type { ThemeValue } from '@procedural-web-composer/shared-types'
+import { ViewerBlockRenderer, ViewerOverlayRenderer } from './viewer-renderer'
 
 export interface PreviewRendererProps {
   root: UiNode | null
@@ -106,6 +107,14 @@ function renderUiNode(node: UiNode): ReactNode {
     )
   }
 
+  if (node.kind === 'ViewerBlock') {
+    return <ViewerBlockRenderer node={node} renderChildren={renderChildren} />
+  }
+
+  if (node.kind === 'ViewerOverlay') {
+    return <ViewerOverlayRenderer node={node} renderChildren={renderChildren} />
+  }
+
   if (node.kind === 'Heading') {
     const level = clampHeadingLevel(node.props.level)
     const Tag = `h${level}` as keyof JSX.IntrinsicElements
@@ -185,7 +194,7 @@ function renderUiNode(node: UiNode): ReactNode {
 }
 
 function renderChildren(children: UiNode[]): ReactNode[] {
-  return children.map((child) => renderUiNode(child))
+  return children.map((child) => <React.Fragment key={child.id}>{renderUiNode(child)}</React.Fragment>)
 }
 
 function sectionStyle(node: UiNode): CSSProperties {

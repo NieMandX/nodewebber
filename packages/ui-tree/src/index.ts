@@ -4,6 +4,8 @@ export type UiNodeKind =
   | 'Section'
   | 'Stack'
   | 'Shell'
+  | 'ViewerBlock'
+  | 'ViewerOverlay'
   | 'Heading'
   | 'Text'
   | 'Button'
@@ -24,6 +26,8 @@ const UI_NODE_KINDS = new Set<UiNodeKind>([
   'Section',
   'Stack',
   'Shell',
+  'ViewerBlock',
+  'ViewerOverlay',
   'Heading',
   'Text',
   'Button',

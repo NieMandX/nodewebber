@@ -40,7 +40,7 @@ export function NodePalette(props: NodePaletteProps): JSX.Element {
         definition.graphId.toLowerCase().includes(normalizedQuery)
       )
     })
-  const categories = ['Layout', 'Content', 'Data', 'Style', 'Subgraph']
+  const categories = ['Layout', 'Content', 'Data', 'Viewer', 'Style', 'Subgraph']
 
   return (
     <div className="palette-stack">

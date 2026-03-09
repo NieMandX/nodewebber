@@ -1,0 +1,21 @@
+{
+  "name": "@procedural-web-composer/node-definitions-viewer",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "module": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json --noEmit",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@procedural-web-composer/shared-types": "workspace:*",
+    "@procedural-web-composer/ui-tree": "workspace:*",
+    "zod": "^3.24.1"
+  }
+}

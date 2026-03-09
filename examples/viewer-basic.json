@@ -1,0 +1,147 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_viewer_basic",
+    "name": "Viewer Basic",
+    "createdAt": "2026-03-09T18:00:00.000Z",
+    "updatedAt": "2026-03-09T18:00:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_viewer_basic_page",
+    "themeMode": "light"
+  },
+  "graphs": [
+    {
+      "id": "graph_viewer_basic_page",
+      "name": "Viewer Basic Page",
+      "kind": "page",
+      "viewport": {
+        "x": -160,
+        "y": -120,
+        "zoom": 0.72
+      },
+      "nodes": [
+        {
+          "id": "node_viewer_theme",
+          "type": "style.theme",
+          "version": 1,
+          "label": "Theme",
+          "position": { "x": 80, "y": 80 },
+          "params": {
+            "colors": {
+              "background": "#f4efe6",
+              "surface": "#fffaf2",
+              "text": "#201913",
+              "accent": "#b8663a"
+            },
+            "typography": {
+              "fontFamily": "\"Space Grotesk\", \"IBM Plex Sans\", sans-serif",
+              "headingScale": 1.14,
+              "bodySize": "1rem"
+            }
+          }
+        },
+        {
+          "id": "node_viewer_page",
+          "type": "layout.page",
+          "version": 1,
+          "label": "Page",
+          "position": { "x": 320, "y": 120 },
+          "params": {
+            "maxWidth": 1120,
+            "padding": 36
+          }
+        },
+        {
+          "id": "node_viewer_model",
+          "type": "viewer.model",
+          "version": 1,
+          "label": "Model",
+          "position": { "x": 620, "y": 0 },
+          "params": {
+            "src": "/models/lounge-chair.glb",
+            "format": "glb",
+            "alt": "Lounge chair model"
+          }
+        },
+        {
+          "id": "node_viewer_environment",
+          "type": "viewer.environment",
+          "version": 1,
+          "label": "Environment",
+          "position": { "x": 620, "y": 180 },
+          "params": {
+            "type": "color",
+            "color": "#111a2f",
+            "intensity": 1.2,
+            "rotation": 0
+          }
+        },
+        {
+          "id": "node_viewer_camera",
+          "type": "viewer.cameraPreset",
+          "version": 1,
+          "label": "Camera",
+          "position": { "x": 620, "y": 360 },
+          "params": {
+            "mode": "orbit",
+            "position": { "x": 2.8, "y": 1.4, "z": 3.6 },
+            "target": { "x": 0, "y": 0.4, "z": 0 },
+            "fov": 38,
+            "minDistance": 1.6,
+            "maxDistance": 6
+          }
+        },
+        {
+          "id": "node_viewer_block",
+          "type": "viewer.block",
+          "version": 1,
+          "label": "Viewer",
+          "position": { "x": 940, "y": 140 },
+          "params": {
+            "title": "Lounge Chair Viewer",
+            "showToolbar": true,
+            "allowOrbit": true,
+            "loadingMode": "lazy",
+            "background": "#111a2f",
+            "exposure": 1.1
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_viewer_theme_page",
+          "from": { "nodeId": "node_viewer_theme", "port": "theme" },
+          "to": { "nodeId": "node_viewer_page", "port": "theme" },
+          "kind": "style"
+        },
+        {
+          "id": "edge_viewer_page_block",
+          "from": { "nodeId": "node_viewer_page", "port": "ui" },
+          "to": { "nodeId": "node_viewer_block", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_viewer_model_block",
+          "from": { "nodeId": "node_viewer_model", "port": "model" },
+          "to": { "nodeId": "node_viewer_block", "port": "model" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_viewer_environment_block",
+          "from": { "nodeId": "node_viewer_environment", "port": "environment" },
+          "to": { "nodeId": "node_viewer_block", "port": "environment" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_viewer_camera_block",
+          "from": { "nodeId": "node_viewer_camera", "port": "camera" },
+          "to": { "nodeId": "node_viewer_block", "port": "camera" },
+          "kind": "data"
+        }
+      ]
+    }
+  ],
+  "assets": []
+}
