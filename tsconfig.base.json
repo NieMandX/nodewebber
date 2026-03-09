@@ -1,0 +1,34 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": false,
+    "resolveJsonModule": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@procedural-web-composer/shared-types": ["packages/shared-types/src/index.ts"],
+      "@procedural-web-composer/shared-utils": ["packages/shared-utils/src/index.ts"],
+      "@procedural-web-composer/node-registry": ["packages/node-registry/src/index.ts"],
+      "@procedural-web-composer/graph-core": ["packages/graph-core/src/index.ts"],
+      "@procedural-web-composer/graph-engine": ["packages/graph-engine/src/index.ts"],
+      "@procedural-web-composer/node-definitions-layout": ["packages/node-definitions-layout/src/index.ts"],
+      "@procedural-web-composer/node-definitions-basic": ["packages/node-definitions-basic/src/index.ts"],
+      "@procedural-web-composer/node-definitions-style": ["packages/node-definitions-style/src/index.ts"],
+      "@procedural-web-composer/runtime-core": ["packages/runtime-core/src/index.ts"],
+      "@procedural-web-composer/runtime-react": ["packages/runtime-react/src/index.ts"],
+      "@procedural-web-composer/editor-core": ["packages/editor-core/src/index.ts"],
+      "@procedural-web-composer/editor-reactflow": ["packages/editor-reactflow/src/index.ts"]
+    }
+  }
+}
+

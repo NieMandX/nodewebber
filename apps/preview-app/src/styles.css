@@ -1,0 +1,180 @@
+:root {
+  font-family: "Space Grotesk", "IBM Plex Sans", "Avenir Next", sans-serif;
+  color: #1f1b17;
+  background:
+    radial-gradient(circle at top right, rgba(201, 111, 54, 0.18), transparent 24rem),
+    radial-gradient(circle at bottom left, rgba(180, 132, 84, 0.12), transparent 26rem),
+    linear-gradient(180deg, #fbf5ec 0%, #f0e3d0 100%);
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+}
+
+button,
+textarea {
+  font: inherit;
+}
+
+.preview-shell {
+  display: grid;
+  grid-template-columns: 420px minmax(0, 1fr);
+  grid-template-rows: auto minmax(380px, 1fr) auto;
+  grid-template-areas:
+    "header header"
+    "json preview"
+    "issues preview";
+  gap: 18px;
+  min-height: 100vh;
+  padding: 18px;
+}
+
+.preview-header {
+  grid-area: header;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 14px;
+}
+
+.preview-header h1 {
+  margin: 0;
+  font-size: clamp(1.7rem, 2vw, 2.4rem);
+  letter-spacing: -0.04em;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.76rem;
+  color: #7a6b5e;
+}
+
+.panel {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 24px;
+  border: 1px solid rgba(31, 27, 23, 0.08);
+  background: rgba(255, 250, 241, 0.84);
+  box-shadow: 0 24px 50px rgba(88, 61, 33, 0.08);
+}
+
+.panel-header {
+  display: grid;
+  gap: 4px;
+}
+
+.panel-header h2,
+.issues-panel h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.panel-header p,
+.muted {
+  margin: 0;
+  color: #7a6b5e;
+  font-size: 0.88rem;
+}
+
+.json-panel {
+  grid-area: json;
+}
+
+.preview-panel {
+  grid-area: preview;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.issues-panel {
+  grid-area: issues;
+}
+
+.json-textarea {
+  width: 100%;
+  min-height: 420px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(31, 27, 23, 0.12);
+  background: rgba(255, 253, 248, 0.92);
+  color: #1f1b17;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.preview-stage {
+  min-height: 0;
+  overflow: auto;
+  border-radius: 22px;
+  border: 1px solid rgba(31, 27, 23, 0.08);
+  background: linear-gradient(180deg, rgba(255, 252, 245, 0.96), rgba(250, 241, 229, 0.92));
+}
+
+.button {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.button.accent {
+  background: #c96f36;
+  color: white;
+  box-shadow: 0 14px 30px rgba(201, 111, 54, 0.22);
+}
+
+.issue-card {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  font-size: 0.84rem;
+}
+
+.issue-card.error {
+  background: rgba(255, 236, 228, 0.9);
+  color: #9d2e18;
+}
+
+.issue-card.warning {
+  background: rgba(255, 244, 220, 0.9);
+  color: #8b5a00;
+}
+
+.error-text {
+  margin: 0;
+  color: #bf4327;
+  font-size: 0.82rem;
+}
+
+@media (max-width: 1100px) {
+  .preview-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      "header"
+      "json"
+      "preview"
+      "issues";
+  }
+
+  .preview-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+

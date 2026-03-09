@@ -1,0 +1,174 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_demo",
+    "name": "Landing Page Graph",
+    "createdAt": "2026-03-09T10:00:00.000Z",
+    "updatedAt": "2026-03-09T10:00:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_home",
+    "themeMode": "light"
+  },
+  "graphs": [
+    {
+      "id": "graph_home",
+      "name": "Home Page",
+      "kind": "page",
+      "viewport": {
+        "x": 0,
+        "y": 0,
+        "zoom": 0.85
+      },
+      "nodes": [
+        {
+          "id": "node_theme",
+          "type": "style.theme",
+          "version": 1,
+          "label": "Theme",
+          "position": { "x": 80, "y": 60 },
+          "params": {
+            "colors": {
+              "background": "#f5efe6",
+              "surface": "#fff9f0",
+              "text": "#1f1b17",
+              "accent": "#c96f36"
+            },
+            "typography": {
+              "fontFamily": "\"Space Grotesk\", \"IBM Plex Sans\", \"Avenir Next\", sans-serif",
+              "headingScale": 1.18,
+              "bodySize": "1rem"
+            }
+          }
+        },
+        {
+          "id": "node_page",
+          "type": "layout.page",
+          "version": 1,
+          "label": "Page",
+          "position": { "x": 380, "y": 100 },
+          "params": {
+            "maxWidth": 1080,
+            "padding": 36
+          }
+        },
+        {
+          "id": "node_section",
+          "type": "layout.section",
+          "version": 1,
+          "label": "Hero Section",
+          "position": { "x": 680, "y": 100 },
+          "params": {
+            "paddingY": 24,
+            "background": "transparent"
+          }
+        },
+        {
+          "id": "node_stack",
+          "type": "layout.stack",
+          "version": 1,
+          "label": "Hero Stack",
+          "position": { "x": 980, "y": 100 },
+          "params": {
+            "direction": "column",
+            "gap": 18,
+            "align": "stretch"
+          }
+        },
+        {
+          "id": "node_heading",
+          "type": "content.heading",
+          "version": 1,
+          "label": "Headline",
+          "position": { "x": 1280, "y": 40 },
+          "params": {
+            "text": "Design web pages from graphs",
+            "level": 1,
+            "align": "left"
+          }
+        },
+        {
+          "id": "node_text",
+          "type": "content.text",
+          "version": 1,
+          "label": "Body Copy",
+          "position": { "x": 1280, "y": 210 },
+          "params": {
+            "text": "This MVP turns a project document into a validated graph, evaluates nodes, builds an intermediate UI tree, and renders it through React."
+          }
+        },
+        {
+          "id": "node_button",
+          "type": "content.button",
+          "version": 1,
+          "label": "CTA",
+          "position": { "x": 1280, "y": 380 },
+          "params": {
+            "label": "Inspect the graph",
+            "href": "#graph",
+            "variant": "solid"
+          }
+        },
+        {
+          "id": "node_image",
+          "type": "content.image",
+          "version": 1,
+          "label": "Preview Image",
+          "position": { "x": 1280, "y": 550 },
+          "params": {
+            "src": "data:image/svg+xml;utf8,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22720%22 height=%22480%22 viewBox=%220 0 720 480%22%3E%3Crect width=%22720%22 height=%22480%22 rx=%2228%22 fill=%22%23ead6bf%22/%3E%3Ccircle cx=%22180%22 cy=%22140%22 r=%2252%22 fill=%22%23c96f36%22 opacity=%220.78%22/%3E%3Cpath d=%22M72 376L232 212l112 116 82-86 222 134H72Z%22 fill=%22%238b5a37%22 opacity=%220.82%22/%3E%3Ctext x=%2258%22 y=%2258%22 font-size=%2230%22 font-family=%22Arial%22 fill=%22%231f1b17%22%3EProcedural media%3C/text%3E%3C/svg%3E",
+            "alt": "Illustration for the procedural web composer",
+            "fit": "cover",
+            "height": 280
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_theme_page",
+          "from": { "nodeId": "node_theme", "port": "theme" },
+          "to": { "nodeId": "node_page", "port": "theme" },
+          "kind": "style"
+        },
+        {
+          "id": "edge_page_section",
+          "from": { "nodeId": "node_page", "port": "ui" },
+          "to": { "nodeId": "node_section", "port": "parent" },
+          "kind": "structure"
+        },
+        {
+          "id": "edge_section_stack",
+          "from": { "nodeId": "node_section", "port": "ui" },
+          "to": { "nodeId": "node_stack", "port": "parent" },
+          "kind": "structure"
+        },
+        {
+          "id": "edge_stack_heading",
+          "from": { "nodeId": "node_stack", "port": "ui" },
+          "to": { "nodeId": "node_heading", "port": "parent" },
+          "kind": "structure"
+        },
+        {
+          "id": "edge_stack_text",
+          "from": { "nodeId": "node_stack", "port": "ui" },
+          "to": { "nodeId": "node_text", "port": "parent" },
+          "kind": "structure"
+        },
+        {
+          "id": "edge_stack_button",
+          "from": { "nodeId": "node_stack", "port": "ui" },
+          "to": { "nodeId": "node_button", "port": "parent" },
+          "kind": "structure"
+        },
+        {
+          "id": "edge_stack_image",
+          "from": { "nodeId": "node_stack", "port": "ui" },
+          "to": { "nodeId": "node_image", "port": "parent" },
+          "kind": "structure"
+        }
+      ]
+    }
+  ],
+  "assets": []
+}
+
