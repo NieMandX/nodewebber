@@ -81,7 +81,7 @@ function UiNodeRenderer(props: {
     outerStyle['--pwc-font'] = theme.typography.fontFamily
 
     return (
-      <div key={node.id} style={outerStyle}>
+      <div key={node.id} className="pwc-page-root" style={outerStyle}>
         <div
           style={{
             maxWidth: formatMaxWidth(node.props.maxWidth),

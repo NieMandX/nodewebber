@@ -262,6 +262,10 @@ textarea {
     linear-gradient(180deg, rgba(255, 252, 245, 0.96), rgba(250, 241, 229, 0.92));
 }
 
+.preview-shell .pwc-page-root {
+  min-height: 100% !important;
+}
+
 .issues-panel {
   display: grid;
   gap: 10px;
