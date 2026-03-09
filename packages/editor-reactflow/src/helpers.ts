@@ -45,7 +45,11 @@ export function toReactFlowEdges(graph: GraphDocument): Edge[] {
     id: edge.id,
     source: edge.from.nodeId,
     target: edge.to.nodeId,
-    sourceHandle: buildHandleId(edge.kind, edge.from.port, edge.slot),
+    sourceHandle: buildHandleId(
+      edge.kind,
+      edge.from.port,
+      edge.kind === 'structure' ? edge.slot ?? DEFAULT_STRUCTURE_SLOT : edge.slot,
+    ),
     targetHandle: buildHandleId(edge.kind, edge.to.port),
     type: 'smoothstep',
     animated: edge.kind === 'style',
@@ -56,6 +60,8 @@ export function toReactFlowEdges(graph: GraphDocument): Edge[] {
     },
   }))
 }
+
+const DEFAULT_STRUCTURE_SLOT = 'children'
 
 export function buildHandleId(
   kind: EdgeKind,
