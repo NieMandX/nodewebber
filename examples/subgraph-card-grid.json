@@ -1,0 +1,348 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_subgraph_cards",
+    "name": "Subgraph Card Grid",
+    "createdAt": "2026-03-09T14:15:00.000Z",
+    "updatedAt": "2026-03-09T14:15:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_page_cards_demo",
+    "themeMode": "light"
+  },
+  "graphs": [
+    {
+      "id": "graph_page_cards_demo",
+      "name": "Card Grid Demo",
+      "kind": "page",
+      "viewport": {
+        "x": -160,
+        "y": -110,
+        "zoom": 0.7
+      },
+      "nodes": [
+        {
+          "id": "node_theme_cards",
+          "type": "style.theme",
+          "version": 1,
+          "label": "Theme",
+          "position": { "x": 80, "y": 80 },
+          "params": {
+            "colors": {
+              "background": "#f3eee6",
+              "surface": "#fffaf3",
+              "text": "#221a15",
+              "accent": "#b8653a"
+            },
+            "typography": {
+              "fontFamily": "\"Space Grotesk\", \"IBM Plex Sans\", sans-serif",
+              "headingScale": 1.14,
+              "bodySize": "1rem"
+            }
+          }
+        },
+        {
+          "id": "node_page_cards",
+          "type": "layout.page",
+          "version": 1,
+          "label": "Page",
+          "position": { "x": 340, "y": 120 },
+          "params": {
+            "maxWidth": 1120,
+            "padding": 36
+          }
+        },
+        {
+          "id": "node_section_cards",
+          "type": "layout.section",
+          "version": 1,
+          "label": "Cards Section",
+          "position": { "x": 620, "y": 120 },
+          "params": {
+            "paddingY": 36,
+            "background": "transparent"
+          }
+        },
+        {
+          "id": "node_stack_cards",
+          "type": "layout.stack",
+          "version": 1,
+          "label": "Cards Stack",
+          "position": { "x": 900, "y": 120 },
+          "params": {
+            "direction": "column",
+            "gap": 18,
+            "align": "stretch"
+          }
+        },
+        {
+          "id": "node_card_one",
+          "type": "subgraph.instance",
+          "version": 1,
+          "label": "Card One",
+          "position": { "x": 1220, "y": 20 },
+          "params": {
+            "subgraphGraphId": "graph_component_card_block",
+            "title": "Fast authoring",
+            "body": "Turn a validated graph into a reusable block with a single command.",
+            "ctaLabel": "Open editor",
+            "ctaHref": "#editor"
+          }
+        },
+        {
+          "id": "node_card_two",
+          "type": "subgraph.instance",
+          "version": 1,
+          "label": "Card Two",
+          "position": { "x": 1220, "y": 220 },
+          "params": {
+            "subgraphGraphId": "graph_component_card_block",
+            "title": "Public params",
+            "body": "Expose a stable param surface through subgraph metadata and param nodes.",
+            "ctaLabel": "View API",
+            "ctaHref": "#api"
+          }
+        },
+        {
+          "id": "node_card_three",
+          "type": "subgraph.instance",
+          "version": 1,
+          "label": "Card Three",
+          "position": { "x": 1220, "y": 420 },
+          "params": {
+            "subgraphGraphId": "graph_component_card_block",
+            "title": "Runtime reuse",
+            "body": "Instances evaluate through the same runtime pipeline and render as normal UiNodes.",
+            "ctaLabel": "Preview result",
+            "ctaHref": "#preview"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_cards_theme_page",
+          "from": { "nodeId": "node_theme_cards", "port": "theme" },
+          "to": { "nodeId": "node_page_cards", "port": "theme" },
+          "kind": "style"
+        },
+        {
+          "id": "edge_cards_page_section",
+          "from": { "nodeId": "node_page_cards", "port": "ui" },
+          "to": { "nodeId": "node_section_cards", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_cards_section_stack",
+          "from": { "nodeId": "node_section_cards", "port": "ui" },
+          "to": { "nodeId": "node_stack_cards", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_cards_stack_one",
+          "from": { "nodeId": "node_stack_cards", "port": "ui" },
+          "to": { "nodeId": "node_card_one", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_cards_stack_two",
+          "from": { "nodeId": "node_stack_cards", "port": "ui" },
+          "to": { "nodeId": "node_card_two", "port": "parent" },
+          "kind": "structure",
+          "order": 1
+        },
+        {
+          "id": "edge_cards_stack_three",
+          "from": { "nodeId": "node_stack_cards", "port": "ui" },
+          "to": { "nodeId": "node_card_three", "port": "parent" },
+          "kind": "structure",
+          "order": 2
+        }
+      ]
+    },
+    {
+      "id": "graph_component_card_block",
+      "name": "Card Block",
+      "kind": "subgraph",
+      "subgraph": {
+        "publicParamsSchema": {
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "ctaLabel": { "type": "string" },
+          "ctaHref": { "type": "string" }
+        },
+        "publicDefaultParams": {
+          "title": "Card title",
+          "body": "Card body copy",
+          "ctaLabel": "Learn more",
+          "ctaHref": "#"
+        }
+      },
+      "viewport": {
+        "x": 0,
+        "y": 0,
+        "zoom": 0.92
+      },
+      "nodes": [
+        {
+          "id": "node_card_root",
+          "type": "layout.section",
+          "version": 1,
+          "label": "Card Root",
+          "position": { "x": 520, "y": 120 },
+          "params": {
+            "paddingY": 20,
+            "background": "rgba(255,255,255,0.72)"
+          }
+        },
+        {
+          "id": "node_card_stack",
+          "type": "layout.stack",
+          "version": 1,
+          "label": "Card Stack",
+          "position": { "x": 840, "y": 120 },
+          "params": {
+            "direction": "column",
+            "gap": 12,
+            "align": "stretch"
+          }
+        },
+        {
+          "id": "node_card_heading",
+          "type": "content.heading",
+          "version": 1,
+          "label": "Title",
+          "position": { "x": 1160, "y": 20 },
+          "params": {
+            "text": "Card title",
+            "level": 3,
+            "align": "left"
+          }
+        },
+        {
+          "id": "node_card_text",
+          "type": "content.text",
+          "version": 1,
+          "label": "Body",
+          "position": { "x": 1160, "y": 180 },
+          "params": {
+            "text": "Card body copy"
+          }
+        },
+        {
+          "id": "node_card_button",
+          "type": "content.button",
+          "version": 1,
+          "label": "CTA",
+          "position": { "x": 1160, "y": 340 },
+          "params": {
+            "label": "Learn more",
+            "href": "#",
+            "variant": "ghost"
+          }
+        },
+        {
+          "id": "node_card_param_title",
+          "type": "subgraph.param",
+          "version": 1,
+          "label": "title",
+          "position": { "x": 140, "y": 20 },
+          "params": {
+            "key": "title",
+            "fallbackValue": "Card title"
+          }
+        },
+        {
+          "id": "node_card_param_body",
+          "type": "subgraph.param",
+          "version": 1,
+          "label": "body",
+          "position": { "x": 140, "y": 180 },
+          "params": {
+            "key": "body",
+            "fallbackValue": "Card body copy"
+          }
+        },
+        {
+          "id": "node_card_param_label",
+          "type": "subgraph.param",
+          "version": 1,
+          "label": "ctaLabel",
+          "position": { "x": 140, "y": 340 },
+          "params": {
+            "key": "ctaLabel",
+            "fallbackValue": "Learn more"
+          }
+        },
+        {
+          "id": "node_card_param_href",
+          "type": "subgraph.param",
+          "version": 1,
+          "label": "ctaHref",
+          "position": { "x": 140, "y": 500 },
+          "params": {
+            "key": "ctaHref",
+            "fallbackValue": "#"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_card_root_stack",
+          "from": { "nodeId": "node_card_root", "port": "ui" },
+          "to": { "nodeId": "node_card_stack", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_card_stack_heading",
+          "from": { "nodeId": "node_card_stack", "port": "ui" },
+          "to": { "nodeId": "node_card_heading", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_card_stack_text",
+          "from": { "nodeId": "node_card_stack", "port": "ui" },
+          "to": { "nodeId": "node_card_text", "port": "parent" },
+          "kind": "structure",
+          "order": 1
+        },
+        {
+          "id": "edge_card_stack_button",
+          "from": { "nodeId": "node_card_stack", "port": "ui" },
+          "to": { "nodeId": "node_card_button", "port": "parent" },
+          "kind": "structure",
+          "order": 2
+        },
+        {
+          "id": "edge_card_title_binding",
+          "from": { "nodeId": "node_card_param_title", "port": "value" },
+          "to": { "nodeId": "node_card_heading", "port": "text" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_card_body_binding",
+          "from": { "nodeId": "node_card_param_body", "port": "value" },
+          "to": { "nodeId": "node_card_text", "port": "text" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_card_button_label",
+          "from": { "nodeId": "node_card_param_label", "port": "value" },
+          "to": { "nodeId": "node_card_button", "port": "label" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_card_button_href",
+          "from": { "nodeId": "node_card_param_href", "port": "value" },
+          "to": { "nodeId": "node_card_button", "port": "href" },
+          "kind": "data"
+        }
+      ]
+    }
+  ],
+  "assets": []
+}

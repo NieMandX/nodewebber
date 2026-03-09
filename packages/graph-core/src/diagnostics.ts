@@ -12,6 +12,7 @@ export interface GraphDiagnostics {
   multiplePageNodeIds: string[]
   missingPageNode: boolean
   missingPageRoot: boolean
+  missingRenderableRoot: boolean
   disconnectedNodeIds: string[]
 }
 
@@ -111,6 +112,7 @@ export function analyzeGraphDiagnostics(
     multiplePageNodeIds: pageNodeIds.length > 1 ? pageNodeIds : [],
     missingPageNode: graph.kind === 'page' && pageNodeIds.length === 0,
     missingPageRoot: graph.kind === 'page' && pageRootNodeIds.length === 0,
+    missingRenderableRoot: uiNodeIds.length === 0 || structureRootNodeIds.length === 0,
     disconnectedNodeIds,
   }
 }

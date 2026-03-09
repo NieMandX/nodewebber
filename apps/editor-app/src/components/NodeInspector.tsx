@@ -1,10 +1,12 @@
 import { z } from 'zod'
+import { getSubgraphDefinition } from '@procedural-web-composer/graph-core'
 import { getGraphById } from '@procedural-web-composer/editor-core'
 import type { EditorStore } from '@procedural-web-composer/editor-core'
 import type {
   GraphIssue,
   NodeDefinition,
   NodeDefinitionResolver,
+  PortableParamSchema,
   PortDefinition,
 } from '@procedural-web-composer/shared-types'
 import { useStore } from 'zustand'
@@ -27,12 +29,21 @@ export function NodeInspector(props: NodeInspectorProps): JSX.Element {
   }
 
   const definition = props.registry.getNodeDefinition(node.type)
+  const referencedSubgraphId =
+    typeof node.params.subgraphGraphId === 'string' ? node.params.subgraphGraphId : undefined
+  const referencedSubgraph =
+    node.type === 'subgraph.instance' && referencedSubgraphId
+      ? getSubgraphDefinition(project, referencedSubgraphId)
+      : undefined
 
   if (!definition) {
     return <div className="empty-panel">No registered node definition found for {node.type}.</div>
   }
 
-  const schemaFields = getSchemaFields(definition.paramsSchema)
+  const schemaFields =
+    node.type === 'subgraph.instance'
+      ? getSchemaFields(referencedSubgraph?.publicParamsSchema ?? {})
+      : getSchemaFields(definition.paramsSchema)
   const bindableInputKeys = new Set(
     definition.inputs
       .filter((input) => input.valueType === 'string' || input.valueType === 'number' || input.valueType === 'boolean')
@@ -55,6 +66,13 @@ export function NodeInspector(props: NodeInspectorProps): JSX.Element {
             <span className="field-caption">Node ID</span>
             <code className="code-chip">{node.id}</code>
           </div>
+          {node.type === 'subgraph.instance' ? (
+            <div>
+              <span className="field-caption">Referenced graph</span>
+              <strong>{referencedSubgraph?.title ?? 'Missing component'}</strong>
+              <small>{referencedSubgraphId ?? 'No graph id set'}</small>
+            </div>
+          ) : null}
         </div>
         <label className="inspector-field">
           <span className="field-caption">Label</span>
@@ -99,6 +117,9 @@ export function NodeInspector(props: NodeInspectorProps): JSX.Element {
       <section className="inspector-section">
         <header className="inspector-section-header">Params</header>
         <div className="inspector-fields">
+          {node.type === 'subgraph.instance' && !referencedSubgraph ? (
+            <p className="muted">This instance does not reference a valid reusable graph.</p>
+          ) : null}
           {generalFields.length === 0 ? (
             <p className="muted">No editable fallback params.</p>
           ) : (
@@ -266,6 +287,14 @@ interface SchemaField {
 }
 
 function getSchemaFields(schema: unknown): SchemaField[] {
+  if (isPortableParamSchema(schema)) {
+    return Object.entries(schema).map(([key, value]) => ({
+      key,
+      kind: value.type,
+      options: value.options ?? [],
+    }))
+  }
+
   const unwrappedSchema = unwrapSchema(schema)
 
   if (!(unwrappedSchema instanceof z.ZodObject)) {
@@ -309,6 +338,33 @@ function parseSchemaField(key: string, schema: z.ZodTypeAny): SchemaField {
   }
 
   return { key, kind: 'json', options: [] }
+}
+
+function isPortableParamSchema(schema: unknown): schema is PortableParamSchema {
+  if (typeof schema !== 'object' || schema === null || Array.isArray(schema)) {
+    return false
+  }
+
+  return Object.values(schema).every((value) => {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+      return false
+    }
+
+    const candidate = value as {
+      type?: unknown
+      options?: unknown
+    }
+
+    return (
+      typeof candidate.type === 'string' &&
+      ['string', 'number', 'boolean', 'enum', 'json', 'string-or-number'].includes(
+        candidate.type,
+      ) &&
+      (candidate.options === undefined ||
+        (Array.isArray(candidate.options) &&
+          candidate.options.every((option) => typeof option === 'string')))
+    )
+  })
 }
 
 function unwrapSchema(schema: unknown): z.ZodTypeAny {

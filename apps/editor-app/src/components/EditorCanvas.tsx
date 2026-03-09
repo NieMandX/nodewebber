@@ -1,4 +1,5 @@
 import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { getSubgraphDefinition } from '@procedural-web-composer/graph-core'
 import { getGraphById } from '@procedural-web-composer/editor-core'
 import type { EditorStore } from '@procedural-web-composer/editor-core'
 import type {
@@ -33,7 +34,7 @@ import {
   parseHandleId,
   toReactFlowEdges,
 } from '@procedural-web-composer/editor-reactflow'
-import { DRAG_NODE_TYPE_MIME } from './dnd'
+import { DRAG_NODE_TEMPLATE_MIME, DRAG_NODE_TYPE_MIME } from './dnd'
 
 interface EditorCanvasProps {
   store: EditorStore
@@ -96,7 +97,7 @@ export function EditorCanvas(props: EditorCanvasProps): JSX.Element {
       position: node.position,
       data: {
         nodeId: node.id,
-        title: node.label ?? definition?.title ?? node.type,
+        title: getNodeTitle(project, node, props.registry),
         type: node.type,
         params: node.params,
         inputs: definition?.inputs ?? [],
@@ -133,8 +134,11 @@ export function EditorCanvas(props: EditorCanvasProps): JSX.Element {
       onDrop={(event) => {
         event.preventDefault()
         const nodeType = event.dataTransfer.getData(DRAG_NODE_TYPE_MIME)
+        const nodeTemplate = parseNodeTemplate(
+          event.dataTransfer.getData(DRAG_NODE_TEMPLATE_MIME),
+        )
 
-        if (!nodeType || !reactFlowInstance) {
+        if ((!nodeType && !nodeTemplate) || !reactFlowInstance) {
           return
         }
 
@@ -142,6 +146,16 @@ export function EditorCanvas(props: EditorCanvasProps): JSX.Element {
           x: event.clientX,
           y: event.clientY,
         })
+
+        if (nodeTemplate) {
+          props.store
+            .getState()
+            .addNode(nodeTemplate.type, position, {
+              ...(nodeTemplate.label ? { label: nodeTemplate.label } : {}),
+              ...(nodeTemplate.params ? { params: nodeTemplate.params } : {}),
+            })
+          return
+        }
 
         props.store.getState().addNode(nodeType, position)
       }}
@@ -380,7 +394,7 @@ function handleNodesChange(changes: NodeChange[], store: EditorStore): void {
 }
 
 function handleSelectionChange(selection: OnSelectionChangeParams, store: EditorStore): void {
-  store.getState().selectNode(selection.nodes[0]?.id)
+  store.getState().selectNodes(selection.nodes.map((node) => node.id))
 }
 
 function centerGraph(
@@ -428,4 +442,60 @@ function formatParamValue(value: unknown): string {
   }
 
   return 'unset'
+}
+
+function getNodeTitle(
+  project: ReturnType<EditorStore['getState']>['project'],
+  node: NodeInstance,
+  registry: NodeDefinitionResolver,
+): string {
+  if (node.label) {
+    return node.label
+  }
+
+  if (node.type === 'subgraph.instance') {
+    const subgraphGraphId =
+      typeof node.params.subgraphGraphId === 'string' ? node.params.subgraphGraphId : undefined
+    const subgraphDefinition = subgraphGraphId
+      ? getSubgraphDefinition(project, subgraphGraphId)
+      : undefined
+
+    if (subgraphDefinition) {
+      return subgraphDefinition.title
+    }
+  }
+
+  return registry.getNodeDefinition(node.type)?.title ?? node.type
+}
+
+function parseNodeTemplate(value: string): {
+  type: string
+  label?: string
+  params?: Record<string, unknown>
+} | undefined {
+  if (!value) {
+    return undefined
+  }
+
+  try {
+    const parsed = JSON.parse(value) as {
+      type?: unknown
+      label?: unknown
+      params?: unknown
+    }
+
+    if (typeof parsed.type !== 'string') {
+      return undefined
+    }
+
+    return {
+      type: parsed.type,
+      ...(typeof parsed.label === 'string' ? { label: parsed.label } : {}),
+      ...(typeof parsed.params === 'object' && parsed.params !== null
+        ? { params: parsed.params as Record<string, unknown> }
+        : {}),
+    }
+  } catch {
+    return undefined
+  }
 }

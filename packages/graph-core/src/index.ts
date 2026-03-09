@@ -14,6 +14,13 @@ export type {
   GraphDiagnostics,
   ProjectDiagnostics,
 } from './diagnostics'
+export {
+  getSubgraphDefinition,
+  getSubgraphDefinitions,
+  isReusableGraph,
+  matchesPortableParamField,
+  validatePortableParamDefaults,
+} from './subgraphs'
 export { validateEdges, validateGraph, validateNodes } from './validation'
 
 import type { ProjectDocument } from '@procedural-web-composer/shared-types'

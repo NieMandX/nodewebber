@@ -2,8 +2,10 @@ import { deserializeProjectDocument, serializeProjectDocument } from '@procedura
 import type {
   EdgeInstance,
   GraphDocument,
+  GraphSubgraphMetadata,
   NodeDefinitionResolver,
   NodeInstance,
+  PortableParamSchemaField,
   ProjectDocument,
 } from '@procedural-web-composer/shared-types'
 import {
@@ -13,7 +15,7 @@ import {
 } from '@procedural-web-composer/shared-utils'
 import { createStore } from 'zustand/vanilla'
 import type { StoreApi } from 'zustand/vanilla'
-import { createEmptyProjectDocument, createNodeInstance } from './factories'
+import { createEmptyProjectDocument, createGraphDocument, createNodeInstance } from './factories'
 
 export interface ConnectNodesInput {
   fromNodeId: string
@@ -22,6 +24,26 @@ export interface ConnectNodesInput {
   toPort: string
   kind: EdgeInstance['kind']
 }
+
+export interface AddNodeInitialState {
+  label?: string
+  params?: Record<string, unknown>
+}
+
+export interface ConvertSelectionToSubgraphOptions {
+  name?: string
+}
+
+export type ConvertSelectionToSubgraphResult =
+  | {
+      ok: true
+      graphId: string
+      instanceNodeId: string
+    }
+  | {
+      ok: false
+      error: string
+    }
 
 export interface EditorHistory {
   past: ProjectDocument[]
@@ -32,11 +54,17 @@ export interface EditorState {
   project: ProjectDocument
   selectedGraphId: string
   selectedNodeId: string | undefined
+  selectedNodeIds: string[]
   jsonBuffer: string
   history: EditorHistory
   setSelectedGraph: (graphId: string) => void
   selectNode: (nodeId?: string) => void
-  addNode: (type: string, position?: NodeInstance['position']) => void
+  selectNodes: (nodeIds: string[]) => void
+  addNode: (
+    type: string,
+    position?: NodeInstance['position'],
+    initialState?: AddNodeInitialState,
+  ) => void
   duplicateNode: (nodeId: string, position?: NodeInstance['position']) => void
   removeNode: (nodeId: string) => void
   removeEdge: (edgeId: string) => void
@@ -45,10 +73,18 @@ export interface EditorState {
   updateNodeParams: (nodeId: string, params: Record<string, unknown>) => void
   updateNodeLabel: (nodeId: string, label: string) => void
   updateNodePosition: (nodeId: string, position: NodeInstance['position']) => void
+  updateGraphName: (graphId: string, name: string) => void
+  updateGraphSubgraphMetadata: (
+    graphId: string,
+    metadata: GraphSubgraphMetadata,
+  ) => void
   setJsonBuffer: (json: string) => void
   loadProject: (project: ProjectDocument) => void
   loadProjectFromJson: (json: string) => { ok: true } | { ok: false; error: string }
   saveProject: () => string
+  convertSelectionToSubgraph: (
+    options?: ConvertSelectionToSubgraphOptions,
+  ) => ConvertSelectionToSubgraphResult
   undo: () => void
   redo: () => void
 }
@@ -65,6 +101,7 @@ export function createEditorStore(options: {
     project: initialProject,
     selectedGraphId: initialProject.settings.entryGraphId,
     selectedNodeId: undefined,
+    selectedNodeIds: [],
     jsonBuffer: serializeProjectDocument(initialProject),
     history: createEmptyHistory(),
     setSelectedGraph: (graphId) => {
@@ -72,15 +109,26 @@ export function createEditorStore(options: {
         ...state,
         selectedGraphId: graphId,
         selectedNodeId: undefined,
+        selectedNodeIds: [],
       }))
     },
     selectNode: (nodeId) => {
       set((state) => ({
         ...state,
         selectedNodeId: nodeId,
+        selectedNodeIds: nodeId ? [nodeId] : [],
       }))
     },
-    addNode: (type, position) => {
+    selectNodes: (nodeIds) => {
+      const nextNodeIds = [...new Set(nodeIds)]
+
+      set((state) => ({
+        ...state,
+        selectedNodeId: nextNodeIds[0],
+        selectedNodeIds: nextNodeIds,
+      }))
+    },
+    addNode: (type, position, initialState) => {
       const definition = options.registry.getNodeDefinition(type)
 
       if (!definition) {
@@ -93,14 +141,17 @@ export function createEditorStore(options: {
           const node = createNodeInstance({
             type,
             version: definition.version,
-            label: definition.title,
+            label: initialState?.label ?? definition.title,
             position:
               position ??
               {
                 x: 80 + (nextIndex % 3) * 280,
                 y: 80 + Math.floor(nextIndex / 3) * 180,
               },
-            params: definition.defaultParams,
+            params: {
+              ...definition.defaultParams,
+              ...(initialState?.params ?? {}),
+            },
             ui: {
               width: 248,
             },
@@ -113,10 +164,13 @@ export function createEditorStore(options: {
           return state
         }
 
+        const nextNodeId = getLastNodeId(project, state.selectedGraphId)
+
         return {
           ...state,
           project,
-          selectedNodeId: getLastNodeId(project, state.selectedGraphId),
+          selectedNodeId: nextNodeId,
+          selectedNodeIds: nextNodeId ? [nextNodeId] : [],
           jsonBuffer: serializeProjectDocument(project),
           history: pushHistory(state.history, state.project),
         }
@@ -151,10 +205,13 @@ export function createEditorStore(options: {
           return state
         }
 
+        const nextNodeId = getLastNodeId(project, state.selectedGraphId)
+
         return {
           ...state,
           project,
-          selectedNodeId: getLastNodeId(project, state.selectedGraphId),
+          selectedNodeId: nextNodeId,
+          selectedNodeIds: nextNodeId ? [nextNodeId] : [],
           jsonBuffer: serializeProjectDocument(project),
           history: pushHistory(state.history, state.project),
         }
@@ -173,10 +230,14 @@ export function createEditorStore(options: {
           return state
         }
 
+        const nextSelectedNodeIds = state.selectedNodeIds.filter((id) => id !== nodeId)
+
         return {
           ...state,
           project,
-          selectedNodeId: state.selectedNodeId === nodeId ? undefined : state.selectedNodeId,
+          selectedNodeId:
+            state.selectedNodeId === nodeId ? nextSelectedNodeIds[0] : state.selectedNodeId,
+          selectedNodeIds: nextSelectedNodeIds,
           jsonBuffer: serializeProjectDocument(project),
           history: pushHistory(state.history, state.project),
         }
@@ -355,6 +416,42 @@ export function createEditorStore(options: {
         }
       })
     },
+    updateGraphName: (graphId, name) => {
+      set((state) => {
+        const project = updateProject(state.project, graphId, (graph) => {
+          graph.name = name
+        })
+
+        if (!project) {
+          return state
+        }
+
+        return {
+          ...state,
+          project,
+          jsonBuffer: serializeProjectDocument(project),
+          history: pushHistory(state.history, state.project),
+        }
+      })
+    },
+    updateGraphSubgraphMetadata: (graphId, metadata) => {
+      set((state) => {
+        const project = updateProject(state.project, graphId, (graph) => {
+          graph.subgraph = structuredClone(metadata)
+        })
+
+        if (!project) {
+          return state
+        }
+
+        return {
+          ...state,
+          project,
+          jsonBuffer: serializeProjectDocument(project),
+          history: pushHistory(state.history, state.project),
+        }
+      })
+    },
     setJsonBuffer: (json) => {
       set((state) => ({
         ...state,
@@ -367,6 +464,7 @@ export function createEditorStore(options: {
         project,
         selectedGraphId: project.settings.entryGraphId,
         selectedNodeId: undefined,
+        selectedNodeIds: [],
         jsonBuffer: serializeProjectDocument(project),
         history: createEmptyHistory(),
       }))
@@ -380,6 +478,7 @@ export function createEditorStore(options: {
           project,
           selectedGraphId: project.settings.entryGraphId,
           selectedNodeId: undefined,
+          selectedNodeIds: [],
           jsonBuffer: serializeProjectDocument(project),
           history: createEmptyHistory(),
         }))
@@ -400,6 +499,35 @@ export function createEditorStore(options: {
       }))
       return json
     },
+    convertSelectionToSubgraph: (conversionOptions) => {
+      const state = get()
+      const result = buildSubgraphConversion(state.project, {
+        selectedGraphId: state.selectedGraphId,
+        selectedNodeIds: resolveSelectedNodeIds(state),
+        registry: options.registry,
+        ...(conversionOptions?.name ? { name: conversionOptions.name } : {}),
+      })
+
+      if (!result.ok) {
+        return result
+      }
+
+      set((currentState) => ({
+        ...currentState,
+        project: result.project,
+        selectedGraphId: result.graphId,
+        selectedNodeId: undefined,
+        selectedNodeIds: [],
+        jsonBuffer: serializeProjectDocument(result.project),
+        history: pushHistory(currentState.history, currentState.project),
+      }))
+
+      return {
+        ok: true,
+        graphId: result.graphId,
+        instanceNodeId: result.instanceNodeId,
+      }
+    },
     undo: () => {
       set((state) => {
         const previousProject = state.history.past.at(-1)
@@ -415,6 +543,7 @@ export function createEditorStore(options: {
           project: restoredProject,
           selectedGraphId: resolveGraphSelection(restoredProject, state.selectedGraphId),
           selectedNodeId: undefined,
+          selectedNodeIds: [],
           jsonBuffer: serializeProjectDocument(restoredProject),
           history: {
             past: state.history.past.slice(0, -1),
@@ -438,6 +567,7 @@ export function createEditorStore(options: {
           project: restoredProject,
           selectedGraphId: resolveGraphSelection(restoredProject, state.selectedGraphId),
           selectedNodeId: undefined,
+          selectedNodeIds: [],
           jsonBuffer: serializeProjectDocument(restoredProject),
           history: {
             past: [...state.history.past, cloneProjectDocument(state.project)],
@@ -490,4 +620,251 @@ function resolveGraphSelection(project: ProjectDocument, graphId: string): strin
 
 function getLastNodeId(project: ProjectDocument, graphId: string): string | undefined {
   return getGraphById(project, graphId)?.nodes.at(-1)?.id
+}
+
+function resolveSelectedNodeIds(state: Pick<EditorState, 'selectedNodeId' | 'selectedNodeIds'>): string[] {
+  return state.selectedNodeIds.length > 0
+    ? state.selectedNodeIds
+    : state.selectedNodeId
+      ? [state.selectedNodeId]
+      : []
+}
+
+function buildSubgraphConversion(
+  project: ProjectDocument,
+  options: {
+    selectedGraphId: string
+    selectedNodeIds: string[]
+    registry: NodeDefinitionResolver
+    name?: string
+  },
+):
+  | {
+      ok: true
+      project: ProjectDocument
+      graphId: string
+      instanceNodeId: string
+    }
+  | {
+      ok: false
+      error: string
+    } {
+  const sourceGraph = getGraphById(project, options.selectedGraphId)
+
+  if (!sourceGraph) {
+    return {
+      ok: false,
+      error: 'Active graph was not found.',
+    }
+  }
+
+  if (options.selectedNodeIds.length === 0) {
+    return {
+      ok: false,
+      error: 'Select one or more nodes before converting to a component.',
+    }
+  }
+
+  if (sourceGraph.kind === 'page' && options.selectedNodeIds.some((nodeId) => getNodeById(sourceGraph, nodeId)?.type === 'layout.page')) {
+    return {
+      ok: false,
+      error: 'The page root cannot be converted into a reusable component.',
+    }
+  }
+
+  const selection = new Set(options.selectedNodeIds)
+  const selectedNodes = sourceGraph.nodes.filter((node) => selection.has(node.id))
+  const selectedEdges = sourceGraph.edges.filter(
+    (edge) => selection.has(edge.from.nodeId) && selection.has(edge.to.nodeId),
+  )
+  const boundaryEdges = sourceGraph.edges.filter((edge) => {
+    const fromSelected = selection.has(edge.from.nodeId)
+    const toSelected = selection.has(edge.to.nodeId)
+    return fromSelected !== toSelected
+  })
+
+  if (selectedNodes.length === 0) {
+    return {
+      ok: false,
+      error: 'Selection did not resolve to any nodes.',
+    }
+  }
+
+  if (
+    boundaryEdges.some(
+      (edge) =>
+        edge.kind !== 'structure' ||
+        (selection.has(edge.from.nodeId) && !selection.has(edge.to.nodeId)),
+    )
+  ) {
+    return {
+      ok: false,
+      error:
+        'Selection has external data/style/event connections or outgoing structure edges. Choose a self-contained subtree.',
+    }
+  }
+
+  const incomingStructureEdges = boundaryEdges.filter(
+    (edge) => edge.kind === 'structure' && !selection.has(edge.from.nodeId),
+  )
+
+  if (incomingStructureEdges.length > 1) {
+    return {
+      ok: false,
+      error:
+        'Selection has multiple external structure parents. Convert a single subtree for MVP subgraph extraction.',
+    }
+  }
+
+  const instanceDefinition = options.registry.getNodeDefinition('subgraph.instance')
+
+  if (!instanceDefinition) {
+    return {
+      ok: false,
+      error: 'Subgraph instance node definition is not registered.',
+    }
+  }
+
+  const componentName = options.name?.trim() || createGeneratedComponentName(project)
+  const publicMetadata = inferSubgraphMetadataFromNodes(selectedNodes)
+  const subgraphGraph = createGraphDocument({
+    name: componentName,
+    kind: 'subgraph',
+    nodes: selectedNodes,
+    edges: selectedEdges,
+    viewport: sourceGraph.viewport,
+    ...(hasSubgraphMetadata(publicMetadata) ? { subgraph: publicMetadata } : {}),
+  })
+  const instanceNode = createNodeInstance({
+    type: 'subgraph.instance',
+    version: instanceDefinition.version,
+    label: componentName,
+    position: computeSelectionPosition(selectedNodes),
+    params: {
+      subgraphGraphId: subgraphGraph.id,
+      ...(publicMetadata.publicDefaultParams ?? {}),
+    },
+    ui: {
+      width: 248,
+    },
+  })
+
+  const nextProject = cloneProjectDocument(project)
+  const nextSourceGraph = getGraphById(nextProject, sourceGraph.id)
+
+  if (!nextSourceGraph) {
+    return {
+      ok: false,
+      error: 'Could not update the source graph.',
+    }
+  }
+
+  nextSourceGraph.nodes = nextSourceGraph.nodes.filter((node) => !selection.has(node.id))
+  nextSourceGraph.edges = nextSourceGraph.edges.filter(
+    (edge) => !selection.has(edge.from.nodeId) && !selection.has(edge.to.nodeId),
+  )
+  nextSourceGraph.nodes.push(instanceNode)
+
+  const incomingStructureEdge = incomingStructureEdges[0]
+
+  if (incomingStructureEdge) {
+    nextSourceGraph.edges.push({
+      id: createId('edge'),
+      from: {
+        nodeId: incomingStructureEdge.from.nodeId,
+        port: incomingStructureEdge.from.port,
+      },
+      to: {
+        nodeId: instanceNode.id,
+        port: 'parent',
+      },
+      kind: 'structure',
+      ...(typeof incomingStructureEdge.order === 'number'
+        ? { order: incomingStructureEdge.order }
+        : {}),
+    })
+  }
+
+  nextProject.graphs.push(subgraphGraph)
+  nextProject.meta.updatedAt = nowIsoString()
+
+  return {
+    ok: true,
+    project: nextProject,
+    graphId: subgraphGraph.id,
+    instanceNodeId: instanceNode.id,
+  }
+}
+
+function getNodeById(graph: GraphDocument, nodeId: string): NodeInstance | undefined {
+  return graph.nodes.find((node) => node.id === nodeId)
+}
+
+function computeSelectionPosition(nodes: NodeInstance[]): NodeInstance['position'] {
+  const left = Math.min(...nodes.map((node) => node.position.x))
+  const top = Math.min(...nodes.map((node) => node.position.y))
+
+  return {
+    x: left,
+    y: top,
+  }
+}
+
+function createGeneratedComponentName(project: ProjectDocument): string {
+  let index = 1
+
+  while (project.graphs.some((graph) => graph.name === `Component ${index}`)) {
+    index += 1
+  }
+
+  return `Component ${index}`
+}
+
+function inferSubgraphMetadataFromNodes(nodes: NodeInstance[]): GraphSubgraphMetadata {
+  const publicParamsSchema: Record<string, PortableParamSchemaField> = {}
+  const publicDefaultParams: Record<string, unknown> = {}
+
+  for (const node of nodes.filter((candidate) => candidate.type === 'subgraph.param')) {
+    const key = typeof node.params.key === 'string' ? node.params.key : undefined
+
+    if (!key) {
+      continue
+    }
+
+    publicParamsSchema[key] = inferPortableParamField(node.params.fallbackValue)
+    publicDefaultParams[key] = node.params.fallbackValue
+  }
+
+  return {
+    ...(Object.keys(publicParamsSchema).length > 0 ? { publicParamsSchema } : {}),
+    ...(Object.keys(publicDefaultParams).length > 0 ? { publicDefaultParams } : {}),
+  }
+}
+
+function inferPortableParamField(value: unknown): PortableParamSchemaField {
+  if (typeof value === 'string') {
+    return {
+      type: 'string',
+    }
+  }
+
+  if (typeof value === 'number') {
+    return {
+      type: 'number',
+    }
+  }
+
+  if (typeof value === 'boolean') {
+    return {
+      type: 'boolean',
+    }
+  }
+
+  return {
+    type: 'json',
+  }
+}
+
+function hasSubgraphMetadata(metadata: GraphSubgraphMetadata): boolean {
+  return Boolean(metadata.publicParamsSchema || metadata.publicDefaultParams)
 }

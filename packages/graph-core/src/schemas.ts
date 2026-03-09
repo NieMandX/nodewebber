@@ -4,6 +4,7 @@ export const valueTypeSchema = z.enum([
   'string',
   'number',
   'boolean',
+  'unknown',
   'object',
   'array',
   'ui-node',
@@ -11,6 +12,16 @@ export const valueTypeSchema = z.enum([
   'style-token',
   'theme',
 ])
+
+export const portableParamSchemaFieldSchema = z.object({
+  type: z.enum(['string', 'number', 'boolean', 'enum', 'json', 'string-or-number']),
+  options: z.array(z.string()).optional(),
+})
+
+export const graphSubgraphMetadataSchema = z.object({
+  publicParamsSchema: z.record(portableParamSchemaFieldSchema).optional(),
+  publicDefaultParams: z.record(z.unknown()).optional(),
+})
 
 export const positionSchema = z.object({
   x: z.number(),
@@ -51,6 +62,7 @@ export const graphDocumentSchema = z.object({
   kind: z.enum(['page', 'component', 'subgraph']),
   nodes: z.array(nodeInstanceSchema),
   edges: z.array(edgeInstanceSchema),
+  subgraph: graphSubgraphMetadataSchema.optional(),
   viewport: z
     .object({
       x: z.number(),

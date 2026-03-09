@@ -1,4 +1,9 @@
-import type { GraphDocument, NodeInstance, ProjectDocument } from '@procedural-web-composer/shared-types'
+import type {
+  GraphDocument,
+  GraphSubgraphMetadata,
+  NodeInstance,
+  ProjectDocument,
+} from '@procedural-web-composer/shared-types'
 import { createId, nowIsoString } from '@procedural-web-composer/shared-utils'
 
 export function createNodeInstance(options: {
@@ -21,8 +26,7 @@ export function createNodeInstance(options: {
 }
 
 export function createEmptyGraphDocument(name = 'Home Page'): GraphDocument {
-  return {
-    id: createId('graph'),
+  return createGraphDocument({
     name,
     kind: 'page',
     nodes: [
@@ -49,6 +53,25 @@ export function createEmptyGraphDocument(name = 'Home Page'): GraphDocument {
       y: 0,
       zoom: 1,
     },
+  })
+}
+
+export function createGraphDocument(options: {
+  name: string
+  kind: GraphDocument['kind']
+  nodes?: GraphDocument['nodes']
+  edges?: GraphDocument['edges']
+  viewport?: GraphDocument['viewport']
+  subgraph?: GraphSubgraphMetadata
+}): GraphDocument {
+  return {
+    id: createId('graph'),
+    name: options.name,
+    kind: options.kind,
+    nodes: structuredClone(options.nodes ?? []),
+    edges: structuredClone(options.edges ?? []),
+    ...(options.viewport ? { viewport: options.viewport } : {}),
+    ...(options.subgraph ? { subgraph: structuredClone(options.subgraph) } : {}),
   }
 }
 

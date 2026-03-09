@@ -6,12 +6,32 @@ export type ValueType =
   | 'string'
   | 'number'
   | 'boolean'
+  | 'unknown'
   | 'object'
   | 'array'
   | 'ui-node'
   | 'ui-children'
   | 'style-token'
   | 'theme'
+
+export interface PortableParamSchemaField {
+  type: 'string' | 'number' | 'boolean' | 'enum' | 'json' | 'string-or-number'
+  options?: string[]
+}
+
+export type PortableParamSchema = Record<string, PortableParamSchemaField>
+
+export interface GraphSubgraphMetadata {
+  publicParamsSchema?: PortableParamSchema
+  publicDefaultParams?: Record<string, unknown>
+}
+
+export interface SubgraphDefinition {
+  graphId: string
+  title: string
+  publicParamsSchema: PortableParamSchema
+  publicDefaultParams: Record<string, unknown>
+}
 
 export interface ProjectDocument {
   version: string
@@ -35,6 +55,7 @@ export interface GraphDocument {
   kind: 'page' | 'component' | 'subgraph'
   nodes: NodeInstance[]
   edges: EdgeInstance[]
+  subgraph?: GraphSubgraphMetadata
   viewport?: {
     x: number
     y: number

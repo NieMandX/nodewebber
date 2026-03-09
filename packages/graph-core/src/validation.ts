@@ -10,6 +10,7 @@ import type {
 import { detectCycles } from './algorithms'
 import { analyzeGraphDiagnostics } from './diagnostics'
 import { projectDocumentSchema } from './schemas'
+import { isReusableGraph, validatePortableParamDefaults } from './subgraphs'
 
 export function validateGraph(
   project: ProjectDocument,
@@ -59,7 +60,7 @@ export function validateGraph(
     graphIds.add(graph.id)
     issues.push(...validateNodes(graph, registry))
     issues.push(...validateEdges(graph, registry))
-    issues.push(...validateGraphSemantics(graph, registry))
+    issues.push(...validateGraphSemantics(project, graph, registry))
 
     for (const cycle of detectCycles(graph)) {
       issues.push({
@@ -70,6 +71,8 @@ export function validateGraph(
       })
     }
   }
+
+  issues.push(...validateSubgraphReferences(project))
 
   return {
     valid: issues.every((issue) => issue.severity !== 'error'),
@@ -256,6 +259,8 @@ export function validateEdges(
 
     if (
       outputPort.valueType !== inputPort.valueType &&
+      outputPort.valueType !== 'unknown' &&
+      inputPort.valueType !== 'unknown' &&
       edge.kind !== 'structure' &&
       edge.kind !== 'event'
     ) {
@@ -299,6 +304,7 @@ export function validateEdges(
 }
 
 function validateGraphSemantics(
+  project: ProjectDocument,
   graph: GraphDocument,
   registry?: NodeDefinitionResolver,
 ): GraphIssue[] {
@@ -364,7 +370,124 @@ function validateGraphSemantics(
     })
   }
 
+  if (isReusableGraph(graph) && diagnostics.missingRenderableRoot) {
+    issues.push({
+      code: 'subgraph_root_missing',
+      message: `Reusable graph "${graph.name}" has no renderable UI root.`,
+      severity: 'warning',
+      graphId: graph.id,
+    })
+  }
+
+  if (isReusableGraph(graph)) {
+    const metadataIssues = validatePortableParamDefaults(
+      graph.subgraph?.publicParamsSchema,
+      graph.subgraph?.publicDefaultParams,
+    )
+
+    for (const message of metadataIssues) {
+      issues.push({
+        code: 'subgraph_public_params_invalid',
+        message: `${graph.name}: ${message}`,
+        severity: 'warning',
+        graphId: graph.id,
+      })
+    }
+  }
+
+  for (const node of graph.nodes.filter((candidate) => candidate.type === 'subgraph.instance')) {
+    const referencedGraphId = getSubgraphGraphId(node)
+
+    if (!referencedGraphId) {
+      issues.push({
+        code: 'subgraph_reference_missing',
+        message: `Subgraph instance "${node.id}" does not declare "subgraphGraphId".`,
+        severity: 'error',
+        graphId: graph.id,
+        nodeId: node.id,
+      })
+      continue
+    }
+
+    const referencedGraph = project.graphs.find((candidate) => candidate.id === referencedGraphId)
+
+    if (!referencedGraph) {
+      issues.push({
+        code: 'subgraph_graph_missing',
+        message: `Subgraph instance "${node.id}" references missing graph "${referencedGraphId}".`,
+        severity: 'error',
+        graphId: graph.id,
+        nodeId: node.id,
+      })
+      continue
+    }
+
+    if (!isReusableGraph(referencedGraph)) {
+      issues.push({
+        code: 'subgraph_graph_kind_invalid',
+        message: `Subgraph instance "${node.id}" must reference a graph with kind "subgraph" or "component".`,
+        severity: 'error',
+        graphId: graph.id,
+        nodeId: node.id,
+      })
+    }
+  }
+
   return issues
+}
+
+function validateSubgraphReferences(project: ProjectDocument): GraphIssue[] {
+  const issues: GraphIssue[] = []
+  const adjacency = new Map<string, string[]>()
+
+  for (const graph of project.graphs) {
+    adjacency.set(
+      graph.id,
+      graph.nodes
+        .filter((node) => node.type === 'subgraph.instance')
+        .map(getSubgraphGraphId)
+        .filter((graphId): graphId is string => Boolean(graphId)),
+    )
+  }
+
+  const visited = new Set<string>()
+  const visiting = new Set<string>()
+
+  for (const graph of project.graphs) {
+    visit(graph.id, [])
+  }
+
+  return issues
+
+  function visit(graphId: string, path: string[]): void {
+    if (visiting.has(graphId)) {
+      issues.push({
+        code: 'subgraph_cycle_detected',
+        message: `Circular subgraph reference detected: ${[...path, graphId].join(' -> ')}.`,
+        severity: 'error',
+        graphId,
+      })
+      return
+    }
+
+    if (visited.has(graphId)) {
+      return
+    }
+
+    visiting.add(graphId)
+
+    for (const nextGraphId of adjacency.get(graphId) ?? []) {
+      visit(nextGraphId, [...path, graphId])
+    }
+
+    visiting.delete(graphId)
+    visited.add(graphId)
+  }
+}
+
+function getSubgraphGraphId(node: { params: Record<string, unknown> }): string | undefined {
+  const graphId = node.params.subgraphGraphId
+  return typeof graphId === 'string' && graphId.length > 0 ? graphId : undefined
 }
 
 function isCompatibleEdgeKind(
@@ -385,6 +508,10 @@ function isCompatibleEdgeKind(
 
   if (edge.kind === 'event') {
     return true
+  }
+
+  if (outputType === 'unknown' || inputType === 'unknown') {
+    return edge.kind === 'data'
   }
 
   return edge.kind === 'data'

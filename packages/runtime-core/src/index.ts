@@ -1,5 +1,4 @@
 import { deserializeProjectDocument, validateGraph } from '@procedural-web-composer/graph-core'
-import { evaluateGraph } from '@procedural-web-composer/graph-engine'
 import type {
   GraphDocument,
   NodeDefinitionResolver,
@@ -7,6 +6,7 @@ import type {
   ProjectRuntimeResult,
 } from '@procedural-web-composer/shared-types'
 import { buildUiTree } from './build-ui-tree'
+import { evaluateGraphRuntime } from './evaluate-graph-runtime'
 
 export function loadProjectDocument(input: string | unknown): ProjectDocument {
   return deserializeProjectDocument(input)
@@ -36,22 +36,25 @@ export function evaluateGraphDocument(
     }
   }
 
-  const evaluation = evaluateGraph({
-    project: document,
+  const runtime = evaluateGraphRuntime({
+    document,
     graph,
     registry,
+    visitedGraphIds: [graph.id],
+    runtimeCache: new Map(),
   })
 
   return {
     graph,
-    root: buildUiTree(graph, evaluation, registry),
-    evaluation,
+    root: runtime.root,
+    evaluation: runtime.evaluation,
     validation,
-    issues: evaluation.issues,
+    issues: runtime.issues,
   }
 }
 
 export { buildUiTree, getPrimaryUiOutput } from './build-ui-tree'
+export { evaluateGraphRuntime } from './evaluate-graph-runtime'
 
 function getGraphDocument(
   document: ProjectDocument,

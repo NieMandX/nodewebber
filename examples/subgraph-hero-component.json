@@ -1,0 +1,269 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_subgraph_hero",
+    "name": "Subgraph Hero Component",
+    "createdAt": "2026-03-09T14:00:00.000Z",
+    "updatedAt": "2026-03-09T14:00:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_page_hero_demo",
+    "themeMode": "light"
+  },
+  "graphs": [
+    {
+      "id": "graph_page_hero_demo",
+      "name": "Hero Demo",
+      "kind": "page",
+      "viewport": {
+        "x": -140,
+        "y": -80,
+        "zoom": 0.78
+      },
+      "nodes": [
+        {
+          "id": "node_theme_hero_demo",
+          "type": "style.theme",
+          "version": 1,
+          "label": "Theme",
+          "position": { "x": 80, "y": 80 },
+          "params": {
+            "colors": {
+              "background": "#f7f1e8",
+              "surface": "#fff8f0",
+              "text": "#201814",
+              "accent": "#bc6434"
+            },
+            "typography": {
+              "fontFamily": "\"Space Grotesk\", \"IBM Plex Sans\", sans-serif",
+              "headingScale": 1.2,
+              "bodySize": "1rem"
+            }
+          }
+        },
+        {
+          "id": "node_page_hero_demo",
+          "type": "layout.page",
+          "version": 1,
+          "label": "Page",
+          "position": { "x": 340, "y": 120 },
+          "params": {
+            "maxWidth": 1160,
+            "padding": 40
+          }
+        },
+        {
+          "id": "node_hero_instance",
+          "type": "subgraph.instance",
+          "version": 1,
+          "label": "Hero Component",
+          "position": { "x": 680, "y": 140 },
+          "params": {
+            "subgraphGraphId": "graph_component_hero_block",
+            "title": "Build reusable graph components",
+            "body": "This subgraph injects public params into internal nodes, evaluates a nested graph, and returns a normal UiNode tree.",
+            "ctaLabel": "Open components",
+            "ctaHref": "#components"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_hero_demo_theme",
+          "from": { "nodeId": "node_theme_hero_demo", "port": "theme" },
+          "to": { "nodeId": "node_page_hero_demo", "port": "theme" },
+          "kind": "style"
+        },
+        {
+          "id": "edge_hero_demo_page_component",
+          "from": { "nodeId": "node_page_hero_demo", "port": "ui" },
+          "to": { "nodeId": "node_hero_instance", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        }
+      ]
+    },
+    {
+      "id": "graph_component_hero_block",
+      "name": "Hero Block",
+      "kind": "subgraph",
+      "subgraph": {
+        "publicParamsSchema": {
+          "title": { "type": "string" },
+          "body": { "type": "string" },
+          "ctaLabel": { "type": "string" },
+          "ctaHref": { "type": "string" }
+        },
+        "publicDefaultParams": {
+          "title": "Compose with reusable blocks",
+          "body": "Subgraphs are evaluated through the existing runtime and rendered as regular UiNodes.",
+          "ctaLabel": "Inspect subgraph",
+          "ctaHref": "#subgraph"
+        }
+      },
+      "viewport": {
+        "x": 0,
+        "y": 0,
+        "zoom": 0.9
+      },
+      "nodes": [
+        {
+          "id": "node_hero_section",
+          "type": "layout.section",
+          "version": 1,
+          "label": "Section",
+          "position": { "x": 520, "y": 120 },
+          "params": {
+            "paddingY": 48,
+            "background": "rgba(255,255,255,0.38)"
+          }
+        },
+        {
+          "id": "node_hero_stack",
+          "type": "layout.stack",
+          "version": 1,
+          "label": "Stack",
+          "position": { "x": 840, "y": 120 },
+          "params": {
+            "direction": "column",
+            "gap": 18,
+            "align": "stretch"
+          }
+        },
+        {
+          "id": "node_hero_heading",
+          "type": "content.heading",
+          "version": 1,
+          "label": "Heading",
+          "position": { "x": 1160, "y": 20 },
+          "params": {
+            "text": "Fallback title",
+            "level": 1,
+            "align": "left"
+          }
+        },
+        {
+          "id": "node_hero_text",
+          "type": "content.text",
+          "version": 1,
+          "label": "Body",
+          "position": { "x": 1160, "y": 180 },
+          "params": {
+            "text": "Fallback body"
+          }
+        },
+        {
+          "id": "node_hero_button",
+          "type": "content.button",
+          "version": 1,
+          "label": "CTA",
+          "position": { "x": 1160, "y": 340 },
+          "params": {
+            "label": "Fallback CTA",
+            "href": "#",
+            "variant": "solid"
+          }
+        },
+        {
+          "id": "node_param_title",
+          "type": "subgraph.param",
+          "version": 1,
+          "label": "title",
+          "position": { "x": 140, "y": 20 },
+          "params": {
+            "key": "title",
+            "fallbackValue": "Compose with reusable blocks"
+          }
+        },
+        {
+          "id": "node_param_body",
+          "type": "subgraph.param",
+          "version": 1,
+          "label": "body",
+          "position": { "x": 140, "y": 180 },
+          "params": {
+            "key": "body",
+            "fallbackValue": "Subgraphs are evaluated through the existing runtime and rendered as regular UiNodes."
+          }
+        },
+        {
+          "id": "node_param_cta_label",
+          "type": "subgraph.param",
+          "version": 1,
+          "label": "ctaLabel",
+          "position": { "x": 140, "y": 340 },
+          "params": {
+            "key": "ctaLabel",
+            "fallbackValue": "Inspect subgraph"
+          }
+        },
+        {
+          "id": "node_param_cta_href",
+          "type": "subgraph.param",
+          "version": 1,
+          "label": "ctaHref",
+          "position": { "x": 140, "y": 500 },
+          "params": {
+            "key": "ctaHref",
+            "fallbackValue": "#subgraph"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_hero_section_stack",
+          "from": { "nodeId": "node_hero_section", "port": "ui" },
+          "to": { "nodeId": "node_hero_stack", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_hero_stack_heading",
+          "from": { "nodeId": "node_hero_stack", "port": "ui" },
+          "to": { "nodeId": "node_hero_heading", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_hero_stack_text",
+          "from": { "nodeId": "node_hero_stack", "port": "ui" },
+          "to": { "nodeId": "node_hero_text", "port": "parent" },
+          "kind": "structure",
+          "order": 1
+        },
+        {
+          "id": "edge_hero_stack_button",
+          "from": { "nodeId": "node_hero_stack", "port": "ui" },
+          "to": { "nodeId": "node_hero_button", "port": "parent" },
+          "kind": "structure",
+          "order": 2
+        },
+        {
+          "id": "edge_hero_param_title",
+          "from": { "nodeId": "node_param_title", "port": "value" },
+          "to": { "nodeId": "node_hero_heading", "port": "text" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hero_param_body",
+          "from": { "nodeId": "node_param_body", "port": "value" },
+          "to": { "nodeId": "node_hero_text", "port": "text" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hero_param_button_label",
+          "from": { "nodeId": "node_param_cta_label", "port": "value" },
+          "to": { "nodeId": "node_hero_button", "port": "label" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_hero_param_button_href",
+          "from": { "nodeId": "node_param_cta_href", "port": "value" },
+          "to": { "nodeId": "node_hero_button", "port": "href" },
+          "kind": "data"
+        }
+      ]
+    }
+  ],
+  "assets": []
+}

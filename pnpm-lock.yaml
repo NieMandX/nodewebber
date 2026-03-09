@@ -38,6 +38,9 @@ importers:
       '@procedural-web-composer/editor-reactflow':
         specifier: workspace:*
         version: link:../../packages/editor-reactflow
+      '@procedural-web-composer/graph-core':
+        specifier: workspace:*
+        version: link:../../packages/graph-core
       '@procedural-web-composer/node-definitions-basic':
         specifier: workspace:*
         version: link:../../packages/node-definitions-basic
@@ -47,6 +50,9 @@ importers:
       '@procedural-web-composer/node-definitions-style':
         specifier: workspace:*
         version: link:../../packages/node-definitions-style
+      '@procedural-web-composer/node-definitions-subgraph':
+        specifier: workspace:*
+        version: link:../../packages/node-definitions-subgraph
       '@procedural-web-composer/node-registry':
         specifier: workspace:*
         version: link:../../packages/node-registry
@@ -105,6 +111,9 @@ importers:
       '@procedural-web-composer/node-definitions-style':
         specifier: workspace:*
         version: link:../../packages/node-definitions-style
+      '@procedural-web-composer/node-definitions-subgraph':
+        specifier: workspace:*
+        version: link:../../packages/node-definitions-subgraph
       '@procedural-web-composer/node-registry':
         specifier: workspace:*
         version: link:../../packages/node-registry
@@ -216,6 +225,15 @@ importers:
         version: 3.25.76
 
   packages/node-definitions-style:
+    dependencies:
+      '@procedural-web-composer/shared-types':
+        specifier: workspace:*
+        version: link:../shared-types
+      zod:
+        specifier: ^3.24.1
+        version: 3.25.76
+
+  packages/node-definitions-subgraph:
     dependencies:
       '@procedural-web-composer/shared-types':
         specifier: workspace:*
