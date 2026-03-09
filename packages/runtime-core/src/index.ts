@@ -7,6 +7,7 @@ import type {
 } from '@procedural-web-composer/shared-types'
 import { buildUiTree } from './build-ui-tree'
 import { buildGraphEventRuntime } from './event-runtime'
+import { buildPresentationRuntime } from './presentation-runtime'
 import { evaluateGraphRuntime } from './evaluate-graph-runtime'
 
 export function loadProjectDocument(input: string | unknown): ProjectDocument {
@@ -45,6 +46,7 @@ export function evaluateGraphDocument(
     runtimeCache: new Map(),
   })
   const eventRuntime = buildGraphEventRuntime(document, graphId)
+  const presentationRuntime = buildPresentationRuntime(document, graphId)
 
   return {
     graph,
@@ -53,11 +55,13 @@ export function evaluateGraphDocument(
     validation,
     issues: runtime.issues,
     ...(eventRuntime ? { eventRuntime } : {}),
+    ...(presentationRuntime ? { presentationRuntime } : {}),
   }
 }
 
 export { buildUiTree, getPrimaryUiOutput } from './build-ui-tree'
 export { buildGraphEventRuntime } from './event-runtime'
+export { buildPresentationRuntime } from './presentation-runtime'
 export {
   evaluateGraphRuntime,
   REPEAT_PREVIEW_WARNING_THRESHOLD,

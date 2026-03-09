@@ -1,0 +1,149 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_presentation_viewer_story",
+    "name": "Presentation Viewer Story",
+    "createdAt": "2026-03-09T21:05:00.000Z",
+    "updatedAt": "2026-03-09T21:05:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_presentation_viewer_story",
+    "themeMode": "dark"
+  },
+  "graphs": [
+    {
+      "id": "graph_presentation_viewer_story",
+      "name": "Presentation Viewer Story",
+      "kind": "page",
+      "nodes": [
+        {
+          "id": "node_story_page",
+          "type": "layout.page",
+          "version": 1,
+          "position": { "x": 40, "y": 80 },
+          "params": { "maxWidth": 1040, "padding": 32 }
+        },
+        {
+          "id": "node_story_viewer",
+          "type": "viewer.block",
+          "version": 1,
+          "position": { "x": 300, "y": 80 },
+          "params": {
+            "title": "Assembly Story",
+            "modelSrc": "/models/coupe.glb",
+            "initialStateId": "overview",
+            "presentationEnabled": true
+          }
+        },
+        {
+          "id": "node_story_state_overview",
+          "type": "viewer.state",
+          "version": 1,
+          "position": { "x": 300, "y": 320 },
+          "params": {
+            "id": "overview",
+            "label": "Overview",
+            "titleOverride": "Full Assembly"
+          }
+        },
+        {
+          "id": "node_story_state_detail",
+          "type": "viewer.state",
+          "version": 1,
+          "position": { "x": 300, "y": 500 },
+          "params": {
+            "id": "detail",
+            "label": "Detail",
+            "titleOverride": "Detail Assembly"
+          }
+        },
+        {
+          "id": "node_story_states",
+          "type": "viewer.states",
+          "version": 1,
+          "position": { "x": 560, "y": 400 },
+          "params": {}
+        },
+        {
+          "id": "node_story_step_overview",
+          "type": "presentation.step",
+          "version": 1,
+          "position": { "x": 820, "y": 120 },
+          "params": {
+            "id": "overview-step",
+            "label": "Overview",
+            "viewerStateId": "overview"
+          }
+        },
+        {
+          "id": "node_story_step_detail",
+          "type": "presentation.step",
+          "version": 1,
+          "position": { "x": 820, "y": 280 },
+          "params": {
+            "id": "detail-step",
+            "label": "Detail",
+            "viewerStateId": "detail"
+          }
+        },
+        {
+          "id": "node_story_steps",
+          "type": "presentation.steps",
+          "version": 1,
+          "position": { "x": 1080, "y": 200 },
+          "params": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_story_page_viewer",
+          "from": { "nodeId": "node_story_page", "port": "ui" },
+          "to": { "nodeId": "node_story_viewer", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_story_state_overview",
+          "from": { "nodeId": "node_story_state_overview", "port": "sceneState" },
+          "to": { "nodeId": "node_story_states", "port": "states" },
+          "kind": "data",
+          "order": 0
+        },
+        {
+          "id": "edge_story_state_detail",
+          "from": { "nodeId": "node_story_state_detail", "port": "sceneState" },
+          "to": { "nodeId": "node_story_states", "port": "states" },
+          "kind": "data",
+          "order": 1
+        },
+        {
+          "id": "edge_story_states_viewer",
+          "from": { "nodeId": "node_story_states", "port": "states" },
+          "to": { "nodeId": "node_story_viewer", "port": "states" },
+          "kind": "data"
+        },
+        {
+          "id": "edge_story_step_overview",
+          "from": { "nodeId": "node_story_step_overview", "port": "step" },
+          "to": { "nodeId": "node_story_steps", "port": "steps" },
+          "kind": "data",
+          "order": 0
+        },
+        {
+          "id": "edge_story_step_detail",
+          "from": { "nodeId": "node_story_step_detail", "port": "step" },
+          "to": { "nodeId": "node_story_steps", "port": "steps" },
+          "kind": "data",
+          "order": 1
+        },
+        {
+          "id": "edge_story_steps_viewer",
+          "from": { "nodeId": "node_story_steps", "port": "steps" },
+          "to": { "nodeId": "node_story_viewer", "port": "presentationSteps" },
+          "kind": "data"
+        }
+      ]
+    }
+  ],
+  "assets": []
+}

@@ -1,0 +1,183 @@
+{
+  "version": "1.0.0",
+  "meta": {
+    "id": "project_presentation_button_nav",
+    "name": "Presentation Button Nav",
+    "createdAt": "2026-03-09T21:10:00.000Z",
+    "updatedAt": "2026-03-09T21:10:00.000Z"
+  },
+  "settings": {
+    "entryGraphId": "graph_presentation_button_nav",
+    "themeMode": "light"
+  },
+  "graphs": [
+    {
+      "id": "graph_presentation_button_nav",
+      "name": "Presentation Button Nav",
+      "kind": "page",
+      "nodes": [
+        {
+          "id": "node_nav_page",
+          "type": "layout.page",
+          "version": 1,
+          "position": { "x": 40, "y": 80 },
+          "params": { "maxWidth": 960, "padding": 32 }
+        },
+        {
+          "id": "node_nav_stack",
+          "type": "layout.stack",
+          "version": 1,
+          "position": { "x": 280, "y": 80 },
+          "params": { "direction": "column", "gap": 16, "align": "stretch" }
+        },
+        {
+          "id": "node_nav_prev",
+          "type": "content.button",
+          "version": 1,
+          "position": { "x": 540, "y": 20 },
+          "params": { "label": "Previous", "href": "#", "variant": "ghost" }
+        },
+        {
+          "id": "node_nav_next",
+          "type": "content.button",
+          "version": 1,
+          "position": { "x": 540, "y": 180 },
+          "params": { "label": "Next", "href": "#", "variant": "solid" }
+        },
+        {
+          "id": "node_nav_step_a",
+          "type": "content.text",
+          "version": 1,
+          "position": { "x": 540, "y": 360 },
+          "params": {
+            "text": "Step A content",
+            "visibleOnSteps": ["step-a"]
+          }
+        },
+        {
+          "id": "node_nav_step_b",
+          "type": "content.text",
+          "version": 1,
+          "position": { "x": 540, "y": 520 },
+          "params": {
+            "text": "Step B content",
+            "visibleOnSteps": ["step-b"]
+          }
+        },
+        {
+          "id": "node_nav_step_one",
+          "type": "presentation.step",
+          "version": 1,
+          "position": { "x": 820, "y": 20 },
+          "params": { "id": "step-a", "label": "Step A" }
+        },
+        {
+          "id": "node_nav_step_two",
+          "type": "presentation.step",
+          "version": 1,
+          "position": { "x": 820, "y": 180 },
+          "params": { "id": "step-b", "label": "Step B" }
+        },
+        {
+          "id": "node_nav_steps",
+          "type": "presentation.steps",
+          "version": 1,
+          "position": { "x": 1080, "y": 100 },
+          "params": {}
+        },
+        {
+          "id": "node_nav_prev_click",
+          "type": "ui.onClick",
+          "version": 1,
+          "position": { "x": 1080, "y": 300 },
+          "params": { "targetNodeId": "node_nav_prev", "eventName": "presentation.prev" }
+        },
+        {
+          "id": "node_nav_next_click",
+          "type": "ui.onClick",
+          "version": 1,
+          "position": { "x": 1080, "y": 460 },
+          "params": { "targetNodeId": "node_nav_next", "eventName": "presentation.next" }
+        },
+        {
+          "id": "node_nav_prev_action",
+          "type": "presentation.prevStep",
+          "version": 1,
+          "position": { "x": 1340, "y": 300 },
+          "params": {}
+        },
+        {
+          "id": "node_nav_next_action",
+          "type": "presentation.nextStep",
+          "version": 1,
+          "position": { "x": 1340, "y": 460 },
+          "params": {}
+        }
+      ],
+      "edges": [
+        {
+          "id": "edge_nav_page_stack",
+          "from": { "nodeId": "node_nav_page", "port": "ui" },
+          "to": { "nodeId": "node_nav_stack", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_nav_stack_prev",
+          "from": { "nodeId": "node_nav_stack", "port": "ui" },
+          "to": { "nodeId": "node_nav_prev", "port": "parent" },
+          "kind": "structure",
+          "order": 0
+        },
+        {
+          "id": "edge_nav_stack_next",
+          "from": { "nodeId": "node_nav_stack", "port": "ui" },
+          "to": { "nodeId": "node_nav_next", "port": "parent" },
+          "kind": "structure",
+          "order": 1
+        },
+        {
+          "id": "edge_nav_stack_step_a",
+          "from": { "nodeId": "node_nav_stack", "port": "ui" },
+          "to": { "nodeId": "node_nav_step_a", "port": "parent" },
+          "kind": "structure",
+          "order": 2
+        },
+        {
+          "id": "edge_nav_stack_step_b",
+          "from": { "nodeId": "node_nav_stack", "port": "ui" },
+          "to": { "nodeId": "node_nav_step_b", "port": "parent" },
+          "kind": "structure",
+          "order": 3
+        },
+        {
+          "id": "edge_nav_step_one",
+          "from": { "nodeId": "node_nav_step_one", "port": "step" },
+          "to": { "nodeId": "node_nav_steps", "port": "steps" },
+          "kind": "data",
+          "order": 0
+        },
+        {
+          "id": "edge_nav_step_two",
+          "from": { "nodeId": "node_nav_step_two", "port": "step" },
+          "to": { "nodeId": "node_nav_steps", "port": "steps" },
+          "kind": "data",
+          "order": 1
+        },
+        {
+          "id": "edge_nav_prev_event",
+          "from": { "nodeId": "node_nav_prev_click", "port": "event" },
+          "to": { "nodeId": "node_nav_prev_action", "port": "trigger" },
+          "kind": "event"
+        },
+        {
+          "id": "edge_nav_next_event",
+          "from": { "nodeId": "node_nav_next_click", "port": "event" },
+          "to": { "nodeId": "node_nav_next_action", "port": "trigger" },
+          "kind": "event"
+        }
+      ]
+    }
+  ],
+  "assets": []
+}

@@ -13,20 +13,28 @@ const uiOutput = {
   valueType: 'ui-node' as const,
 }
 
+const visibilitySchemaFields = {
+  visibleOnSteps: z.array(z.string()).optional(),
+  hiddenOnSteps: z.array(z.string()).optional(),
+}
+
 const headingParamsSchema = z.object({
   text: z.string(),
   level: z.number().int().min(1).max(6),
   align: z.enum(['left', 'center', 'right']),
+  ...visibilitySchemaFields,
 }).passthrough()
 
 const textParamsSchema = z.object({
   text: z.string(),
+  ...visibilitySchemaFields,
 }).passthrough()
 
 const buttonParamsSchema = z.object({
   label: z.string(),
   href: z.string(),
   variant: z.enum(['solid', 'ghost']),
+  ...visibilitySchemaFields,
 }).passthrough()
 
 const imageParamsSchema = z.object({
@@ -34,6 +42,7 @@ const imageParamsSchema = z.object({
   alt: z.string(),
   fit: z.enum(['cover', 'contain']),
   height: z.union([z.number(), z.string()]),
+  ...visibilitySchemaFields,
 }).passthrough()
 
 const placeholderImage =
@@ -43,16 +52,22 @@ const headingDefaultParams = {
   text: 'Compose a page visually',
   level: 1,
   align: 'left',
+  visibleOnSteps: [] as string[],
+  hiddenOnSteps: [] as string[],
 }
 
 const textDefaultParams = {
   text: 'Wire layout, content, and theme nodes into a renderable UI tree.',
+  visibleOnSteps: [] as string[],
+  hiddenOnSteps: [] as string[],
 }
 
 const buttonDefaultParams = {
   label: 'Read the graph',
   href: '#',
   variant: 'solid',
+  visibleOnSteps: [] as string[],
+  hiddenOnSteps: [] as string[],
 }
 
 const imageDefaultParams = {
@@ -60,6 +75,8 @@ const imageDefaultParams = {
   alt: 'Placeholder artwork',
   fit: 'cover',
   height: 280,
+  visibleOnSteps: [] as string[],
+  hiddenOnSteps: [] as string[],
 }
 
 export const headingNodeDefinition: NodeDefinition = {
@@ -91,6 +108,7 @@ export const headingNodeDefinition: NodeDefinition = {
           props: {
             text,
             level: params.level,
+            ...getVisibilityProps(params),
           },
           children: [],
           styles: {
@@ -131,6 +149,7 @@ export const textNodeDefinition: NodeDefinition = {
           kind: 'Text',
           props: {
             text,
+            ...getVisibilityProps(params),
           },
           children: [],
           styles: {
@@ -178,6 +197,7 @@ export const buttonNodeDefinition: NodeDefinition = {
             label,
             href,
             variant: params.variant,
+            ...getVisibilityProps(params),
           },
           children: [],
           styles: {},
@@ -222,6 +242,7 @@ export const imageNodeDefinition: NodeDefinition = {
             src,
             alt,
             fit: params.fit,
+            ...getVisibilityProps(params),
           },
           children: [],
           styles: {
@@ -240,3 +261,21 @@ export const basicNodeDefinitions: NodeDefinition[] = [
   buttonNodeDefinition,
   imageNodeDefinition,
 ]
+
+function getVisibilityProps(params: Record<string, unknown>): Record<string, unknown> {
+  const visibleOnSteps = params.visibleOnSteps
+  const hiddenOnSteps = params.hiddenOnSteps
+
+  return {
+    ...(hasStringArray(visibleOnSteps) && visibleOnSteps.length > 0
+      ? { visibleOnSteps }
+      : {}),
+    ...(hasStringArray(hiddenOnSteps) && hiddenOnSteps.length > 0
+      ? { hiddenOnSteps }
+      : {}),
+  }
+}
+
+function hasStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((entry) => typeof entry === 'string')
+}

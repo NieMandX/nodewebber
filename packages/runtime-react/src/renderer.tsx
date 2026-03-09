@@ -2,14 +2,25 @@ import React from 'react'
 import type { CSSProperties, ReactNode } from 'react'
 import { normalizeThemeValue } from '@procedural-web-composer/shared-utils'
 import type { UiNode } from '@procedural-web-composer/ui-tree'
-import type { GraphEventRuntime, ThemeValue } from '@procedural-web-composer/shared-types'
+import type {
+  GraphEventRuntime,
+  PresentationRuntime,
+  ThemeValue,
+} from '@procedural-web-composer/shared-types'
 import { GraphEventProvider, useGraphEventController } from './graph-events'
+import {
+  isUiNodeVisibleForPresentationStep,
+  PresentationControls,
+  PresentationProvider,
+  usePresentationController,
+} from './presentation'
 import { ViewerBlockRenderer, ViewerOverlayRenderer } from './viewer-renderer'
 
 export interface PreviewRendererProps {
   root: UiNode | null
   emptyMessage?: string
   eventRuntime: GraphEventRuntime | undefined
+  presentationRuntime: PresentationRuntime | undefined
 }
 
 export function PreviewRenderer(props: PreviewRendererProps): ReactNode {
@@ -24,16 +35,30 @@ export function PreviewRenderer(props: PreviewRendererProps): ReactNode {
 
   return (
     <GraphEventProvider eventRuntime={props.eventRuntime}>
-      {renderUiTree(props.root)}
+      <PresentationProvider presentationRuntime={props.presentationRuntime}>
+        <div style={{ display: 'grid', gap: '16px' }}>
+          {renderUiTree(props.root)}
+          <PresentationControls />
+        </div>
+      </PresentationProvider>
     </GraphEventProvider>
   )
 }
 
 export function renderUiTree(node: UiNode): ReactNode {
-  return renderUiNode(node)
+  return <UiNodeRenderer node={node} />
 }
 
-function renderUiNode(node: UiNode): ReactNode {
+function UiNodeRenderer(props: {
+  node: UiNode
+}): ReactNode {
+  const presentation = usePresentationController()
+  const node = props.node
+
+  if (!isUiNodeVisibleForPresentationStep(node, presentation?.activeStep)) {
+    return null
+  }
+
   if (node.kind === 'Fragment') {
     return <>{renderChildren(node.children)}</>
   }
@@ -191,14 +216,18 @@ function renderUiNode(node: UiNode): ReactNode {
   }
 
   return (
-    <div key={node.id} style={toCssProperties(node.styles)}>
-      {renderChildren(node.children)}
-    </div>
+      <div key={node.id} style={toCssProperties(node.styles)}>
+        {renderChildren(node.children)}
+      </div>
   )
 }
 
 function renderChildren(children: UiNode[]): ReactNode[] {
-  return children.map((child) => <React.Fragment key={child.id}>{renderUiNode(child)}</React.Fragment>)
+  return children.map((child) => (
+    <React.Fragment key={child.id}>
+      <UiNodeRenderer node={child} />
+    </React.Fragment>
+  ))
 }
 
 function ButtonNodeRenderer(props: {

@@ -371,6 +371,22 @@ function validateGraphSemantics(
   const diagnostics = analyzeGraphDiagnostics(graph, registry)
   const issues: GraphIssue[] = []
   const nodesById = new Map(graph.nodes.map((node) => [node.id, node]))
+  const presentationSteps = collectPresentationStepReferences(graph)
+  const knownPresentationStepIds = new Set(presentationSteps.map((step) => step.id))
+  const knownViewerStateIds = new Set(
+    graph.nodes
+      .filter((node) => node.type === 'viewer.block')
+      .flatMap((node) => collectViewerStateReferences(graph, nodesById, node))
+      .map((reference) => reference.id)
+      .filter((candidate): candidate is string => Boolean(candidate)),
+  )
+  const knownViewerVariantIds = new Set(
+    graph.nodes
+      .filter((node) => node.type === 'viewer.block')
+      .flatMap((node) => collectViewerVariantReferences(graph, nodesById, node))
+      .map((reference) => reference.id)
+      .filter((candidate): candidate is string => Boolean(candidate)),
+  )
 
   if (graph.kind === 'page') {
     if (diagnostics.missingPageNode) {
@@ -535,6 +551,19 @@ function validateGraphSemantics(
         nodeId: node.id,
       })
     }
+  }
+
+  const duplicatePresentationStepIds = getDuplicateViewerIds(
+    presentationSteps.map((step) => step.id),
+  )
+
+  if (duplicatePresentationStepIds.length > 0) {
+    issues.push({
+      code: 'presentation_step_duplicate_id',
+      message: `Graph "${graph.name}" declares duplicate presentation step ids: ${duplicatePresentationStepIds.join(', ')}.`,
+      severity: 'warning',
+      graphId: graph.id,
+    })
   }
 
   for (const node of graph.nodes.filter((candidate) => candidate.type === 'data.repeat')) {
@@ -801,6 +830,93 @@ function validateGraphSemantics(
           nodeId: node.id,
         })
       }
+    }
+
+    if (node.type === 'presentation.step') {
+      const viewerStateId = readViewerString(node.params.viewerStateId)
+      const viewerVariantId = readViewerString(node.params.viewerVariantId)
+
+      if (viewerStateId && !knownViewerStateIds.has(viewerStateId)) {
+        issues.push({
+          code: 'presentation_step_viewer_state_unknown',
+          message: `Presentation step "${node.id}" references unknown viewer state "${viewerStateId}".`,
+          severity: 'warning',
+          graphId: graph.id,
+          nodeId: node.id,
+        })
+      }
+
+      if (viewerVariantId && !knownViewerVariantIds.has(viewerVariantId)) {
+        issues.push({
+          code: 'presentation_step_viewer_variant_unknown',
+          message: `Presentation step "${node.id}" references unknown viewer variant "${viewerVariantId}".`,
+          severity: 'warning',
+          graphId: graph.id,
+          nodeId: node.id,
+        })
+      }
+    }
+
+    if (node.type === 'presentation.steps') {
+      const stepInputCount = graph.edges.filter(
+        (edge) =>
+          edge.kind === 'data' &&
+          edge.to.nodeId === node.id &&
+          edge.to.port === 'steps',
+      ).length
+
+      if (stepInputCount === 0) {
+        issues.push({
+          code: 'presentation_steps_empty',
+          message: `Presentation steps node "${node.id}" has no step inputs connected.`,
+          severity: 'warning',
+          graphId: graph.id,
+          nodeId: node.id,
+        })
+      }
+    }
+
+    if (node.type === 'presentation.setStep') {
+      const stepId = readViewerString(node.params.stepId)
+
+      if (!stepId || !knownPresentationStepIds.has(stepId)) {
+        issues.push({
+          code: 'presentation_step_unknown',
+          message: `Presentation action "${node.id}" references unknown step "${stepId ?? ''}".`,
+          severity: 'warning',
+          graphId: graph.id,
+          nodeId: node.id,
+        })
+      }
+    }
+
+    const visibleOnSteps = readViewerStringArray(node.params.visibleOnSteps)
+    const hiddenOnSteps = readViewerStringArray(node.params.hiddenOnSteps)
+
+    for (const stepId of [...visibleOnSteps, ...hiddenOnSteps]) {
+      if (!knownPresentationStepIds.has(stepId)) {
+        issues.push({
+          code: 'presentation_visibility_step_unknown',
+          message: `Node "${node.id}" references unknown presentation step "${stepId}" in visibility rules.`,
+          severity: 'warning',
+          graphId: graph.id,
+          nodeId: node.id,
+        })
+      }
+    }
+
+    const contradictoryVisibilitySteps = visibleOnSteps.filter((stepId) =>
+      hiddenOnSteps.includes(stepId),
+    )
+
+    if (contradictoryVisibilitySteps.length > 0) {
+      issues.push({
+        code: 'presentation_visibility_contradictory',
+        message: `Node "${node.id}" marks the same presentation steps as both visible and hidden: ${contradictoryVisibilitySteps.join(', ')}.`,
+        severity: 'warning',
+        graphId: graph.id,
+        nodeId: node.id,
+      })
     }
 
     if (node.type === 'viewer.onHotspotClick' || node.type === 'viewer.onStateChange') {
@@ -1088,6 +1204,13 @@ interface ViewerHotspotReference {
   linkedStateId?: string
   action?: ViewerActionConfig
   actionSourceNodeId?: string
+}
+
+interface PresentationStepReference {
+  id: string
+  nodeId: string
+  viewerStateId?: string
+  viewerVariantId?: string
 }
 
 function collectViewerStateReferences(
@@ -1456,8 +1579,35 @@ function getDuplicateViewerIds(values: Array<string | undefined>): string[] {
   return [...duplicates]
 }
 
+function collectPresentationStepReferences(
+  graph: GraphDocument,
+): PresentationStepReference[] {
+  return graph.nodes
+    .filter((node) => node.type === 'presentation.step')
+    .map((node, index) => {
+      const viewerStateId = readViewerString(node.params.viewerStateId)
+      const viewerVariantId = readViewerString(node.params.viewerVariantId)
+
+      return {
+        id: readViewerString(node.params.id) ?? `step-${index + 1}`,
+        nodeId: node.id,
+        ...(viewerStateId ? { viewerStateId } : {}),
+        ...(viewerVariantId ? { viewerVariantId } : {}),
+      }
+    })
+}
+
 function readViewerString(value: unknown): string | undefined {
   return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined
+}
+
+function readViewerStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value
+        .filter((entry): entry is string => typeof entry === 'string')
+        .map((entry) => entry.trim())
+        .filter((entry) => entry.length > 0)
+    : []
 }
 
 function getValueTypeForPortableField(

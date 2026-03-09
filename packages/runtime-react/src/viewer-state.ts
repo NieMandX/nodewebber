@@ -1,4 +1,5 @@
 import type {
+  PresentationStepConfig,
   ViewerActionConfig,
   ViewerBlockProps,
   ViewerCameraConfig,
@@ -58,13 +59,17 @@ export function getInitialViewerInteractionState(
 export function resolveViewerConfig(
   props: ViewerBlockProps,
   interactionState: ViewerInteractionState,
+  activePresentationStep?: PresentationStepConfig,
 ): ViewerResolvedConfig {
   const states = getViewerStates(props)
   const variants = getViewerVariants(props)
   const hotspots = props.hotspots ?? []
+  const stepDrivenStateId = readString(activePresentationStep?.viewerStateId)
+  const stepDrivenVariantId = readString(activePresentationStep?.viewerVariantId)
   const activeStateId =
     readString(props.activeStateId) ??
     interactionState.activeStateId ??
+    stepDrivenStateId ??
     readString(props.initialStateId) ??
     states.find((state) => state.id === 'default')?.id ??
     states[0]?.id
@@ -72,6 +77,7 @@ export function resolveViewerConfig(
   const activeVariantId =
     readString(props.activeVariantId) ??
     interactionState.activeVariantId ??
+    stepDrivenVariantId ??
     readString(activeState?.activeVariantId)
   const activeVariant = variants.find((variant) => variant.id === activeVariantId)
   const activeHotspotId =

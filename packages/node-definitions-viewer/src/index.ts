@@ -3,6 +3,7 @@ import type { UiNode } from '@procedural-web-composer/ui-tree'
 import type {
   GraphEventPayload,
   NodeDefinition,
+  PresentationStepConfig,
   ViewerActionConfig,
   ViewerBlockProps,
   ViewerCameraConfig,
@@ -88,10 +89,13 @@ const viewerBlockParamsSchema = z
     hotspots: z.array(z.record(z.unknown())).optional(),
     states: z.array(z.record(z.unknown())).optional(),
     variants: z.array(z.record(z.unknown())).optional(),
+    presentationSteps: z.array(z.record(z.unknown())).optional(),
     initialStateId: z.string().optional(),
     activeStateId: z.string().optional(),
     activeVariantId: z.string().optional(),
+    activeStepId: z.string().optional(),
     interactionsEnabled: z.boolean().optional(),
+    presentationEnabled: z.boolean().optional(),
     stateTransitionMode: stateTransitionModeSchema.optional(),
   })
   .passthrough()
@@ -220,10 +224,13 @@ const viewerBlockDefaultParams = {
   hotspots: [] as ViewerHotspotConfig[],
   states: [] as ViewerSceneStateConfig[],
   variants: [] as ViewerVariantConfig[],
+  presentationSteps: [] as PresentationStepConfig[],
   initialStateId: '',
   activeStateId: '',
   activeVariantId: '',
+  activeStepId: '',
   interactionsEnabled: true,
+  presentationEnabled: true,
   stateTransitionMode: 'soft' as const,
 }
 
@@ -316,11 +323,14 @@ export const viewerBlockNodeDefinition: NodeDefinition = {
     { key: 'camera', valueType: 'object' },
     { key: 'hotspots', valueType: 'array' },
     { key: 'states', valueType: 'array' },
+    { key: 'presentationSteps', valueType: 'array' },
     { key: 'initialState', valueType: 'string' },
     { key: 'activeState', valueType: 'string' },
+    { key: 'activeStep', valueType: 'string' },
     { key: 'variants', valueType: 'array' },
     { key: 'variant', valueType: 'string' },
     { key: 'interactionsEnabled', valueType: 'boolean' },
+    { key: 'presentationEnabled', valueType: 'boolean' },
   ],
   outputs: [uiOutput],
   defaultParams: viewerBlockDefaultParams,
@@ -349,16 +359,23 @@ export const viewerBlockNodeDefinition: NodeDefinition = {
       ctx.getInput<ViewerHotspotConfig[]>('hotspots') ?? asHotspotList(params.hotspots)
     const resolvedStates =
       ctx.getInput<ViewerSceneStateConfig[]>('states') ?? asSceneStateList(params.states)
+    const resolvedPresentationSteps =
+      ctx.getInput<PresentationStepConfig[]>('presentationSteps') ??
+      asPresentationStepList(params.presentationSteps)
     const resolvedVariants =
       ctx.getInput<ViewerVariantConfig[]>('variants') ?? asVariantList(params.variants)
     const resolvedInitialStateId =
       readInputString(ctx.getInput('initialState')) ?? readString(params.initialStateId)
     const resolvedActiveStateId =
       readInputString(ctx.getInput('activeState')) ?? readString(params.activeStateId)
+    const resolvedActiveStepId =
+      readInputString(ctx.getInput('activeStep')) ?? readString(params.activeStepId)
     const resolvedActiveVariantId =
       readInputString(ctx.getInput('variant')) ?? readString(params.activeVariantId)
     const interactionsEnabled =
       ctx.getInput<boolean>('interactionsEnabled') ?? params.interactionsEnabled ?? true
+    const presentationEnabled =
+      ctx.getInput<boolean>('presentationEnabled') ?? params.presentationEnabled ?? true
     const props: ViewerBlockProps = {
       ...(isNonEmptyString(params.title) ? { title: params.title } : {}),
       ...(isNonEmptyString(params.description) ? { description: params.description } : {}),
@@ -375,10 +392,15 @@ export const viewerBlockNodeDefinition: NodeDefinition = {
       ...(resolvedCamera ? { cameraPreset: resolvedCamera } : {}),
       ...(resolvedHotspots.length > 0 ? { hotspots: resolvedHotspots } : {}),
       ...(resolvedStates.length > 0 ? { states: resolvedStates } : {}),
+      ...(resolvedPresentationSteps.length > 0
+        ? { presentationSteps: resolvedPresentationSteps }
+        : {}),
       ...(resolvedVariants.length > 0 ? { variants: resolvedVariants } : {}),
       ...(resolvedInitialStateId ? { initialStateId: resolvedInitialStateId } : {}),
       ...(resolvedActiveStateId ? { activeStateId: resolvedActiveStateId } : {}),
       ...(resolvedActiveVariantId ? { activeVariantId: resolvedActiveVariantId } : {}),
+      ...(resolvedActiveStepId ? { activeStepId: resolvedActiveStepId } : {}),
+      presentationEnabled,
     }
 
     return {
@@ -916,6 +938,38 @@ function asSceneStateList(value: unknown): ViewerSceneStateConfig[] {
     : []
 }
 
+function asPresentationStepList(value: unknown): PresentationStepConfig[] {
+  return Array.isArray(value)
+    ? value
+        .map((item) => asRecord(item))
+        .filter((item): item is Record<string, unknown> => Boolean(item))
+        .map((item, index) => {
+          const metadata = asRecord(item.metadata)
+
+          return {
+            id: readString(item.id) ?? `step-${index + 1}`,
+            ...(isNonEmptyString(item.label) ? { label: item.label } : {}),
+            ...(isNonEmptyString(item.title) ? { title: item.title } : {}),
+            ...(isNonEmptyString(item.description) ? { description: item.description } : {}),
+            ...(isNonEmptyString(item.viewerStateId)
+              ? { viewerStateId: item.viewerStateId }
+              : {}),
+            ...(isNonEmptyString(item.viewerVariantId)
+              ? { viewerVariantId: item.viewerVariantId }
+              : {}),
+            ...(hasStringArray(item.visibleSlots) ? { visibleSlots: item.visibleSlots } : {}),
+            ...(hasStringArray(item.visibleNodeIds)
+              ? { visibleNodeIds: item.visibleNodeIds }
+              : {}),
+            ...(hasStringArray(item.hiddenNodeIds)
+              ? { hiddenNodeIds: item.hiddenNodeIds }
+              : {}),
+            ...(metadata ? { metadata } : {}),
+          }
+        })
+    : []
+}
+
 function asVariantList(value: unknown): ViewerVariantConfig[] {
   return Array.isArray(value)
     ? value
@@ -981,6 +1035,10 @@ function readString(value: unknown): string | undefined {
 
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0
+}
+
+function hasStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((entry) => typeof entry === 'string')
 }
 
 function hasVector3(value: unknown): value is { x: number; y: number; z: number } {

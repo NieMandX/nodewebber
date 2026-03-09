@@ -2,6 +2,10 @@ import exampleProject from '../../../examples/example-project.json'
 import dataCardList from '../../../examples/data-card-list.json'
 import landingBasic from '../../../examples/landing-basic.json'
 import landingHero from '../../../examples/landing-hero.json'
+import presentationBasic from '../../../examples/presentation-basic.json'
+import presentationButtonNav from '../../../examples/presentation-button-nav.json'
+import presentationSubgraphStory from '../../../examples/presentation-subgraph-story.json'
+import presentationViewerStory from '../../../examples/presentation-viewer-story.json'
 import slotShellLayout from '../../../examples/slot-shell-layout.json'
 import subgraphCardGrid from '../../../examples/subgraph-card-grid.json'
 import subgraphHeroComponent from '../../../examples/subgraph-hero-component.json'
@@ -19,6 +23,26 @@ import viewerStateSubgraph from '../../../examples/viewer-state-subgraph.json'
 import viewerVariants from '../../../examples/viewer-variants.json'
 
 export const sampleProjects = [
+  {
+    key: 'presentation-basic',
+    label: 'Presentation Basic',
+    document: presentationBasic,
+  },
+  {
+    key: 'presentation-viewer-story',
+    label: 'Presentation Viewer Story',
+    document: presentationViewerStory,
+  },
+  {
+    key: 'presentation-button-nav',
+    label: 'Presentation Button Nav',
+    document: presentationButtonNav,
+  },
+  {
+    key: 'presentation-subgraph-story',
+    label: 'Presentation Subgraph Story',
+    document: presentationSubgraphStory,
+  },
   {
     key: 'viewer-hotspot-to-state',
     label: 'Viewer Hotspot To State',

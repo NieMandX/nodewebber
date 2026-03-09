@@ -15,6 +15,7 @@
     "@procedural-web-composer/node-definitions-data": "workspace:*",
     "@procedural-web-composer/node-definitions-events": "workspace:*",
     "@procedural-web-composer/node-definitions-layout": "workspace:*",
+    "@procedural-web-composer/node-definitions-presentation": "workspace:*",
     "@procedural-web-composer/node-definitions-style": "workspace:*",
     "@procedural-web-composer/node-definitions-subgraph": "workspace:*",
     "@procedural-web-composer/node-definitions-viewer": "workspace:*",

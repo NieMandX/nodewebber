@@ -185,6 +185,34 @@ export interface ViewerSceneStateConfig {
   metadata?: Record<string, unknown>
 }
 
+export interface PresentationStepConfig {
+  id: string
+  label?: string
+  title?: string
+  description?: string
+  viewerStateId?: string
+  viewerVariantId?: string
+  visibleSlots?: string[]
+  visibleNodeIds?: string[]
+  hiddenNodeIds?: string[]
+  metadata?: Record<string, unknown>
+}
+
+export type PresentationActionConfig =
+  | {
+      type: 'setStep'
+      stepId: string
+    }
+  | {
+      type: 'nextStep'
+    }
+  | {
+      type: 'prevStep'
+    }
+  | {
+      type: 'togglePlay'
+    }
+
 export interface ViewerVariantConfig {
   id: string
   label?: string
@@ -241,6 +269,9 @@ export interface ViewerBlockProps {
   activeVariantId?: string
   interactionsEnabled?: boolean
   stateTransitionMode?: 'instant' | 'soft'
+  presentationSteps?: PresentationStepConfig[]
+  activeStepId?: string
+  presentationEnabled?: boolean
 }
 
 export interface ViewerOverlayProps {
@@ -276,11 +307,16 @@ export interface GraphEventReactionBinding {
     | 'events.focusViewerCamera'
     | 'events.emit'
     | 'events.log'
+    | 'presentation.setStep'
+    | 'presentation.nextStep'
+    | 'presentation.prevStep'
+    | 'presentation.togglePlay'
   inputPort: string
   outputPort?: string
   viewerBlockNodeId?: string
   stateId?: string
   variantId?: string
+  stepId?: string
   camera?: ViewerCameraConfig
   eventName?: string
   payload?: Record<string, unknown>
@@ -302,6 +338,12 @@ export interface GraphEventRuntime {
   reactions: GraphEventReactionBinding[]
   edges: GraphEventBindingEdge[]
   maxDispatchDepth: number
+}
+
+export interface PresentationRuntime {
+  graphId: string
+  steps: PresentationStepConfig[]
+  initialStepId?: string
 }
 
 export interface EvaluationContext {
@@ -368,6 +410,7 @@ export interface ProjectRuntimeResult {
   root: UiNode | null
   evaluation?: GraphEvaluation
   eventRuntime?: GraphEventRuntime
+  presentationRuntime?: PresentationRuntime
   validation: GraphValidationResult
   issues: RuntimeIssue[]
 }

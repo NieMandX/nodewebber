@@ -18,52 +18,71 @@ const sectionSlots = ['children'] as const
 const stackSlots = ['children'] as const
 const shellSlots = ['children', 'header', 'body', 'footer'] as const
 
+const visibilitySchemaFields = {
+  visibleOnSteps: z.array(z.string()).optional(),
+  hiddenOnSteps: z.array(z.string()).optional(),
+}
+
 const pageParamsSchema = z.object({
   maxWidth: z.union([z.number(), z.string()]),
   padding: z.union([z.number(), z.string()]),
+  ...visibilitySchemaFields,
 }).passthrough()
 
 const sectionParamsSchema = z.object({
   paddingY: z.union([z.number(), z.string()]),
   background: z.string(),
+  ...visibilitySchemaFields,
 }).passthrough()
 
 const stackParamsSchema = z.object({
   direction: z.enum(['row', 'column']),
   gap: z.union([z.number(), z.string()]),
   align: z.enum(['start', 'center', 'end', 'stretch']),
+  ...visibilitySchemaFields,
 }).passthrough()
 
 const shellParamsSchema = z.object({
   padding: z.union([z.number(), z.string()]),
   gap: z.union([z.number(), z.string()]),
   background: z.string(),
+  ...visibilitySchemaFields,
 }).passthrough()
 
 const pageDefaultParams = {
   maxWidth: 1120,
   padding: 32,
+  visibleOnSteps: [] as string[],
+  hiddenOnSteps: [] as string[],
 }
 
 const sectionDefaultParams = {
   paddingY: 24,
   background: 'transparent',
+  visibleOnSteps: [] as string[],
+  hiddenOnSteps: [] as string[],
 }
 
 const stackDefaultParams: {
   direction: 'row' | 'column'
   gap: number
   align: 'start' | 'center' | 'end' | 'stretch'
+  visibleOnSteps: string[]
+  hiddenOnSteps: string[]
 } = {
   direction: 'column',
   gap: 16,
   align: 'stretch',
+  visibleOnSteps: [],
+  hiddenOnSteps: [],
 }
 
 const shellDefaultParams = {
   padding: 24,
   gap: 20,
   background: 'rgba(255,255,255,0.42)',
+  visibleOnSteps: [] as string[],
+  hiddenOnSteps: [] as string[],
 }
 
 export const pageNodeDefinition: NodeDefinition = {
@@ -92,6 +111,7 @@ export const pageNodeDefinition: NodeDefinition = {
       props: {
         theme,
         maxWidth: params.maxWidth,
+        ...getVisibilityProps(params),
       },
       children: [],
       styles: {
@@ -131,7 +151,9 @@ export const sectionNodeDefinition: NodeDefinition = {
         ui: {
           id: node.id,
           kind: 'Section',
-          props: {},
+          props: {
+            ...getVisibilityProps(params),
+          },
           children: [],
           styles: {
             paddingBlock: formatCssUnit(params.paddingY, '24px'),
@@ -163,7 +185,9 @@ export const stackNodeDefinition: NodeDefinition = {
         ui: {
           id: node.id,
           kind: 'Stack',
-          props: {},
+          props: {
+            ...getVisibilityProps(params),
+          },
           children: [],
           styles: {
             display: 'flex',
@@ -197,7 +221,9 @@ export const shellNodeDefinition: NodeDefinition = {
         ui: {
           id: node.id,
           kind: 'Shell',
-          props: {},
+          props: {
+            ...getVisibilityProps(params),
+          },
           children: [],
           styles: {
             display: 'grid',
@@ -228,4 +254,22 @@ function normalizeAlign(value: 'start' | 'center' | 'end' | 'stretch'): string {
   }
 
   return value
+}
+
+function getVisibilityProps(params: Record<string, unknown>): Record<string, unknown> {
+  const visibleOnSteps = params.visibleOnSteps
+  const hiddenOnSteps = params.hiddenOnSteps
+
+  return {
+    ...(hasStringArray(visibleOnSteps) && visibleOnSteps.length > 0
+      ? { visibleOnSteps }
+      : {}),
+    ...(hasStringArray(hiddenOnSteps) && hiddenOnSteps.length > 0
+      ? { hiddenOnSteps }
+      : {}),
+  }
+}
+
+function hasStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((entry) => typeof entry === 'string')
 }

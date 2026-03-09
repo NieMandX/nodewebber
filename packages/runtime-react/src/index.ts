@@ -10,8 +10,24 @@ export type {
   GraphEventControllerOptions,
   GraphEventLogEntry,
   GraphEventWarning,
+  PresentationCommandTarget,
   ViewerCommandTarget,
 } from './graph-events'
+export {
+  PresentationControls,
+  PresentationProvider,
+  getInitialPresentationState,
+  getNextPresentationStepId,
+  getPresentationStepById,
+  getPresentationStepIndex,
+  getPreviousPresentationStepId,
+  isUiNodeVisibleForPresentationStep,
+  usePresentationController,
+} from './presentation'
+export type {
+  PresentationControllerValue,
+  PresentationState,
+} from './presentation'
 export { ViewerBlockRenderer, ViewerOverlayRenderer } from './viewer-renderer'
 export {
   applyViewerAction,

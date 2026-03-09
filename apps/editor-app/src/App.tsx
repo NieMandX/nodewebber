@@ -189,7 +189,11 @@ export function App(): JSX.Element {
           <p>Project JSON → validation → evaluation → UI tree → React render.</p>
         </div>
         <div className="preview-shell">
-          <PreviewRenderer root={runtime.root} eventRuntime={runtime.eventRuntime} />
+          <PreviewRenderer
+            root={runtime.root}
+            eventRuntime={runtime.eventRuntime}
+            presentationRuntime={runtime.presentationRuntime}
+          />
         </div>
         <GraphIssuesPanel
           graphName={selectedGraph?.name ?? 'Unknown graph'}

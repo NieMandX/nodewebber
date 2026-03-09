@@ -58,7 +58,11 @@ export function App(): JSX.Element {
           <p>Validation and evaluation happen locally in the browser.</p>
         </div>
         <div className="preview-stage">
-          <PreviewRenderer root={runtime.root} eventRuntime={runtime.eventRuntime} />
+          <PreviewRenderer
+            root={runtime.root}
+            eventRuntime={runtime.eventRuntime}
+            presentationRuntime={runtime.presentationRuntime}
+          />
         </div>
       </section>
 

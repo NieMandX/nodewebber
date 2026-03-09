@@ -193,6 +193,49 @@ export function buildGraphEventRuntime(
         continue
       }
 
+      if (node.type === 'presentation.setStep') {
+        const stepId = readString(node.params.stepId)
+
+        reactions.push({
+          nodeId: node.id,
+          graphId: graph.id,
+          reactionType: 'presentation.setStep',
+          inputPort: 'trigger',
+          ...(stepId ? { stepId } : {}),
+        })
+        continue
+      }
+
+      if (node.type === 'presentation.nextStep') {
+        reactions.push({
+          nodeId: node.id,
+          graphId: graph.id,
+          reactionType: 'presentation.nextStep',
+          inputPort: 'trigger',
+        })
+        continue
+      }
+
+      if (node.type === 'presentation.prevStep') {
+        reactions.push({
+          nodeId: node.id,
+          graphId: graph.id,
+          reactionType: 'presentation.prevStep',
+          inputPort: 'trigger',
+        })
+        continue
+      }
+
+      if (node.type === 'presentation.togglePlay') {
+        reactions.push({
+          nodeId: node.id,
+          graphId: graph.id,
+          reactionType: 'presentation.togglePlay',
+          inputPort: 'trigger',
+        })
+        continue
+      }
+
       if (node.type === 'subgraph.instance') {
         const subgraphDefinition = getSubgraphDefinition(document, readString(node.params.subgraphGraphId) ?? '')
         const referencedGraph = subgraphDefinition

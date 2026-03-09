@@ -13,6 +13,13 @@ export interface ViewerCommandTarget {
   showHotspot: (hotspotId: string) => void
 }
 
+export interface PresentationCommandTarget {
+  nextStep: () => void
+  prevStep: () => void
+  setStep: (stepId: string) => void
+  togglePlay: () => void
+}
+
 export interface GraphEventWarning {
   code: string
   message: string
@@ -47,6 +54,7 @@ export interface GraphEventController {
     data?: Record<string, unknown>
   }) => void
   hasUiClickBinding: (targetNodeId: string) => boolean
+  registerPresentationCommands: (commands: PresentationCommandTarget) => () => void
   registerViewerCommands: (
     viewerNodeId: string,
     commands: ViewerCommandTarget,
@@ -62,6 +70,7 @@ export function createGraphEventController(
   const outgoingEdgesBySourceNodeId = new Map<string, GraphEventRuntime['edges']>()
   const reactionsByNodeId = new Map<string, GraphEventReactionBinding>()
   const viewerCommandsByNodeId = new Map<string, ViewerCommandTarget>()
+  let presentationCommands: PresentationCommandTarget | undefined
   const sources = eventRuntime?.sources ?? []
   const maxDispatchDepth = eventRuntime?.maxDispatchDepth ?? 12
 
@@ -142,6 +151,15 @@ export function createGraphEventController(
           source.sourceType === 'ui.onClick' &&
           (!source.targetNodeId || source.targetNodeId === targetNodeId),
       ),
+    registerPresentationCommands: (commands) => {
+      presentationCommands = commands
+
+      return () => {
+        if (presentationCommands === commands) {
+          presentationCommands = undefined
+        }
+      }
+    },
     registerViewerCommands: (viewerNodeId, commands) => {
       viewerCommandsByNodeId.set(viewerNodeId, commands)
 
@@ -240,6 +258,31 @@ export function createGraphEventController(
         nodeId: reaction.nodeId,
         ...(reaction.label ? { label: reaction.label } : {}),
       })
+      return
+    }
+
+    if (reaction.reactionType === 'presentation.setStep') {
+      const stepId = reaction.stepId ?? readString(payload.data?.stepId)
+
+      if (stepId) {
+        presentationCommands?.setStep(stepId)
+      }
+
+      return
+    }
+
+    if (reaction.reactionType === 'presentation.nextStep') {
+      presentationCommands?.nextStep()
+      return
+    }
+
+    if (reaction.reactionType === 'presentation.prevStep') {
+      presentationCommands?.prevStep()
+      return
+    }
+
+    if (reaction.reactionType === 'presentation.togglePlay') {
+      presentationCommands?.togglePlay()
       return
     }
 

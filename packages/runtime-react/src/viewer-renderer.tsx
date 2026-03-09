@@ -9,6 +9,7 @@ import type {
 } from '@procedural-web-composer/shared-types'
 import type { UiNode } from '@procedural-web-composer/ui-tree'
 import { useGraphEventController } from './graph-events'
+import { getPresentationStepById, usePresentationController } from './presentation'
 import {
   applyViewerAction,
   getHotspotAction,
@@ -21,15 +22,26 @@ export function ViewerBlockRenderer(props: {
   renderChildren: (children: UiNode[]) => ReactNode[]
 }): JSX.Element {
   const controller = useGraphEventController()
+  const presentation = usePresentationController()
   const viewerProps = props.node.props as ViewerBlockProps
   const overlayChildren = props.node.slots?.overlay ?? []
   const stateSignature = JSON.stringify(viewerProps.states ?? [])
   const variantSignature = JSON.stringify(viewerProps.variants ?? [])
+  const presentationSteps = viewerProps.presentationSteps ?? presentation?.steps ?? []
+  const activePresentationStepId =
+    viewerProps.presentationEnabled === false
+      ? undefined
+      : viewerProps.activeStepId ?? presentation?.activeStepId
+  const activePresentationStep = getPresentationStepById(
+    presentationSteps,
+    activePresentationStepId,
+  )
   const [interactionState, setInteractionState] = React.useState(() =>
     getInitialViewerInteractionState(viewerProps),
   )
   const hasMountedRef = React.useRef(false)
   const previousActiveStateIdRef = React.useRef<string | undefined>(undefined)
+  const previousPresentationStepIdRef = React.useRef<string | undefined>(undefined)
 
   React.useEffect(() => {
     setInteractionState(getInitialViewerInteractionState(viewerProps))
@@ -39,12 +51,29 @@ export function ViewerBlockRenderer(props: {
     props.node.id,
     viewerProps.activeStateId,
     viewerProps.activeVariantId,
+    viewerProps.activeStepId,
     viewerProps.initialStateId,
+    JSON.stringify(viewerProps.presentationSteps ?? []),
     stateSignature,
     variantSignature,
   ])
 
-  const resolved = resolveViewerConfig(viewerProps, interactionState)
+  React.useEffect(() => {
+    if (previousPresentationStepIdRef.current === activePresentationStepId) {
+      return
+    }
+
+    previousPresentationStepIdRef.current = activePresentationStepId
+    setInteractionState((currentState) => ({
+      ...currentState,
+      activeStateId: undefined,
+      activeVariantId: undefined,
+      activeHotspotId: undefined,
+      focusedCamera: undefined,
+    }))
+  }, [activePresentationStepId])
+
+  const resolved = resolveViewerConfig(viewerProps, interactionState, activePresentationStep)
   const statePickerLocked = isNonEmptyString(viewerProps.activeStateId)
   const variantPickerLocked = isNonEmptyString(viewerProps.activeVariantId)
 
@@ -159,6 +188,7 @@ export function ViewerBlockRenderer(props: {
           <Badge label={resolved.stateTransitionMode === 'instant' ? 'Instant state' : 'Soft state'} />
           {resolved.activeStateId ? <Badge label={`State ${resolved.activeStateId}`} /> : null}
           {resolved.activeVariantId ? <Badge label={`Variant ${resolved.activeVariantId}`} /> : null}
+          {activePresentationStepId ? <Badge label={`Step ${activePresentationStepId}`} /> : null}
           {resolved.hotspots.length > 0 ? <Badge label={`${resolved.hotspots.length} hotspots`} /> : null}
         </div>
       </div>
