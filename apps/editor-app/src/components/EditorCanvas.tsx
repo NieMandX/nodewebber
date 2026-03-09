@@ -90,62 +90,79 @@ export function EditorCanvas(props: EditorCanvasProps): JSX.Element {
     return <div className="empty-panel">No active graph</div>
   }
 
-  const clipboardExistsInGraph =
-    clipboardNodeId !== undefined && graph.nodes.some((node) => node.id === clipboardNodeId)
-  const nodes: EditorCanvasNode[] = graph.nodes.map((node) => {
-    const definition = props.registry.getNodeDefinition(node.type)
-    const referencedSubgraph =
-      node.type === 'subgraph.instance' &&
-      typeof node.params.subgraphGraphId === 'string' &&
-      node.params.subgraphGraphId.length > 0
-        ? getSubgraphDefinition(project, node.params.subgraphGraphId)
-        : undefined
-    const inputs =
-      node.type === 'subgraph.instance'
-        ? [
-            ...(definition?.inputs ?? []),
-            ...getPublicParamInputPorts(referencedSubgraph?.publicParamsSchema ?? {}),
-          ]
-        : definition?.inputs ?? []
-    const slotNames =
-      node.type === 'subgraph.instance'
-        ? referencedSubgraph?.publicSlots ?? ['children']
-        : definition?.slots?.length
-          ? definition.slots
-          : ['children']
+  const clipboardExistsInGraph = useMemo(
+    () => clipboardNodeId !== undefined && graph.nodes.some((node) => node.id === clipboardNodeId),
+    [clipboardNodeId, graph.nodes],
+  )
+  const nodes = useMemo<EditorCanvasNode[]>(
+    () =>
+      graph.nodes.map((node) => {
+        const definition = props.registry.getNodeDefinition(node.type)
+        const referencedSubgraph =
+          node.type === 'subgraph.instance' &&
+          typeof node.params.subgraphGraphId === 'string' &&
+          node.params.subgraphGraphId.length > 0
+            ? getSubgraphDefinition(project, node.params.subgraphGraphId)
+            : undefined
+        const inputs =
+          node.type === 'subgraph.instance'
+            ? [
+                ...(definition?.inputs ?? []),
+                ...getPublicParamInputPorts(referencedSubgraph?.publicParamsSchema ?? {}),
+              ]
+            : definition?.inputs ?? []
+        const slotNames =
+          node.type === 'subgraph.instance'
+            ? referencedSubgraph?.publicSlots ?? ['children']
+            : definition?.slots?.length
+              ? definition.slots
+              : ['children']
 
-    return {
-      id: node.id,
-      type: 'editor-node',
-      position: node.position,
-      data: {
-        nodeId: node.id,
-        title: getNodeTitle(project, node, props.registry),
-        type: node.type,
-        params: node.params,
-        inputs,
-        outputs: definition?.outputs ?? [],
-        slotNames,
-        invalid: invalidMessagesByNodeId.has(node.id),
-        invalidMessages: invalidMessagesByNodeId.get(node.id) ?? [],
-        hasClipboard: clipboardExistsInGraph,
-        onDelete: (nodeId) => props.store.getState().removeNode(nodeId),
-        onDuplicate: (nodeId, position) => props.store.getState().duplicateNode(nodeId, position),
-        onCopy: (nodeId) => setClipboardNodeId(nodeId),
-        onPaste: (position) => {
-          if (!clipboardNodeId) {
-            return
-          }
+        return {
+          id: node.id,
+          type: 'editor-node',
+          position: node.position,
+          data: {
+            nodeId: node.id,
+            title: getNodeTitle(project, node, props.registry),
+            type: node.type,
+            params: node.params,
+            inputs,
+            outputs: definition?.outputs ?? [],
+            slotNames,
+            invalid: invalidMessagesByNodeId.has(node.id),
+            invalidMessages: invalidMessagesByNodeId.get(node.id) ?? [],
+            hasClipboard: clipboardExistsInGraph,
+            onDelete: (nodeId) => props.store.getState().removeNode(nodeId),
+            onDuplicate: (nodeId, position) => props.store.getState().duplicateNode(nodeId, position),
+            onCopy: (nodeId) => setClipboardNodeId(nodeId),
+            onPaste: (position) => {
+              if (!clipboardNodeId) {
+                return
+              }
 
-          props.store.getState().duplicateNode(clipboardNodeId, position)
-        },
-      },
-    }
-  })
-  const edges = toReactFlowEdges(graph)
-  const nodeTypes: NodeTypes = {
-    'editor-node': CanvasNode,
-  }
+              props.store.getState().duplicateNode(clipboardNodeId, position)
+            },
+          },
+        }
+      }),
+    [
+      clipboardExistsInGraph,
+      clipboardNodeId,
+      graph.nodes,
+      invalidMessagesByNodeId,
+      project,
+      props.registry,
+      props.store,
+    ],
+  )
+  const edges = useMemo(() => toReactFlowEdges(graph), [graph])
+  const nodeTypes = useMemo<NodeTypes>(
+    () => ({
+      'editor-node': CanvasNode,
+    }),
+    [],
+  )
 
   return (
     <div
@@ -437,7 +454,14 @@ function handleNodesChange(changes: NodeChange[], store: EditorStore): void {
 }
 
 function handleSelectionChange(selection: OnSelectionChangeParams, store: EditorStore): void {
-  store.getState().selectNodes(selection.nodes.map((node) => node.id))
+  const nextNodeIds = selection.nodes.map((node) => node.id)
+  const currentNodeIds = store.getState().selectedNodeIds
+
+  if (areNodeIdListsEqual(currentNodeIds, nextNodeIds)) {
+    return
+  }
+
+  store.getState().selectNodes(nextNodeIds)
 }
 
 function centerGraph(
@@ -548,6 +572,10 @@ function getPublicParamInputPorts(schema: PortableParamSchema): PortDefinition[]
     key,
     valueType: getValueTypeForPortableField(field),
   }))
+}
+
+function areNodeIdListsEqual(left: string[], right: string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index])
 }
 
 function getValueTypeForPortableField(field: PortableParamSchemaField): ValueType {

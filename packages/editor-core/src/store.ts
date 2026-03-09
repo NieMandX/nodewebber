@@ -114,20 +114,40 @@ export function createEditorStore(options: {
       }))
     },
     selectNode: (nodeId) => {
-      set((state) => ({
-        ...state,
-        selectedNodeId: nodeId,
-        selectedNodeIds: nodeId ? [nodeId] : [],
-      }))
+      set((state) => {
+        const nextNodeIds = nodeId ? [nodeId] : []
+
+        if (
+          state.selectedNodeId === nodeId &&
+          areNodeIdListsEqual(state.selectedNodeIds, nextNodeIds)
+        ) {
+          return state
+        }
+
+        return {
+          ...state,
+          selectedNodeId: nodeId,
+          selectedNodeIds: nextNodeIds,
+        }
+      })
     },
     selectNodes: (nodeIds) => {
       const nextNodeIds = [...new Set(nodeIds)]
 
-      set((state) => ({
-        ...state,
-        selectedNodeId: nextNodeIds[0],
-        selectedNodeIds: nextNodeIds,
-      }))
+      set((state) => {
+        if (
+          state.selectedNodeId === nextNodeIds[0] &&
+          areNodeIdListsEqual(state.selectedNodeIds, nextNodeIds)
+        ) {
+          return state
+        }
+
+        return {
+          ...state,
+          selectedNodeId: nextNodeIds[0],
+          selectedNodeIds: nextNodeIds,
+        }
+      })
     },
     addNode: (type, position, initialState) => {
       const definition = options.registry.getNodeDefinition(type)
@@ -618,6 +638,10 @@ function pushHistory(history: EditorHistory, project: ProjectDocument): EditorHi
 
 function resolveGraphSelection(project: ProjectDocument, graphId: string): string {
   return getGraphById(project, graphId)?.id ?? project.settings.entryGraphId
+}
+
+function areNodeIdListsEqual(left: string[], right: string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index])
 }
 
 function getLastNodeId(project: ProjectDocument, graphId: string): string | undefined {
